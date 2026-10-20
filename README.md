@@ -14,6 +14,7 @@ A collection of agent skills for the [open agent skills ecosystem](https://www.n
 - **[xianyu-operations](./xianyu-operations/)** — Xianyu (闲鱼 / Goofish) operations: keyword search, item detail, own listings, IM sessions — plus publishing, taking listings down and sending messages, each write approved by the user. mtop JSON API over plain HTTP, with a browser path only for search.
 - **[napcat-onebot](./napcat-onebot/)** — Talk to QQ through a self-hosted NapCat protocol side (OneBot 11 over HTTP): send group and private messages, read chat history on demand, look up groups and friends, upload files — plus the auth, retcode, id-precision and account-risk failure modes, and how to bring the protocol side up.
 - **[zitadel-administration](./zitadel-administration/)** — Operate a self-hosted ZITADEL instance through its APIs: service accounts and their three authentication methods, administrator roles at instance/org/project level, projects, OIDC/API/SAML applications, organizations, users and role assignments — plus the connectRPC v2 versus legacy v1 REST split, the error model, and the tasks only the legacy API can still do.
+- **[android-adb](./android-adb/)** — Drive Android devices from a host shell with raw `adb`: wireless pairing and mDNS, transport selection and state recovery, input injection and display/state control, logcat and artifact capture, `am instrument` and CI gating — plus the UI-tree dumps, bug reports, ANR evidence, Doze testing and test-device reset that the common skill packs leave out.
 
 ## Installation
 
@@ -49,6 +50,7 @@ quadlet-creator/          # SKILL.md + references/ + templates/ + README
 video-edit-planner/       # SKILL.md + references/ + scripts/ + README
 zitadel-administration/   # SKILL.md + references/ + templates/ + README
 napcat-onebot/            # SKILL.md + references/ + README
+android-adb/              # SKILL.md + references/ + README
 ```
 
 Several of these skills were previously maintained as standalone repositories (now archived and deleted) and were consolidated here.
