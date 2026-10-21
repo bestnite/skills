@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-这是一个工作流技能，把 UI 从初稿带到评审完成：还没有设计时，从一个现成的、设计良好的参考起步——模板公开了代码就直接复用，没有就实测后重建；然后把它变成能用的真实页面，让人可以点选任意元素，把一句模糊的话变成单维度的 patch，并验证结果。
+这是一个工作流技能，把 UI 从初稿带到评审完成：还没有设计时，拿一个现成的、设计良好的参考——用它公开的代码，或者保存它线上 demo 渲染出来的页面——把它的设计语言搬到页面需要的内容上；然后把它变成能用的真实页面，让人可以点选任意元素，把一句模糊的话变成单维度的 patch，并验证结果。
 
 它不凭空发明页面长什么样。外观来自已经设计好的东西——用户选定的参考——优先来自用户自己偏好的来源，没有偏好时取自一份入门清单（shadcn/ui、Tremor、TailAdmin、Cruip、Astro themes、Vercel templates；One Page Love、Recent、Mobbin）——设计类技能或 agent、用户本人，或草稿所抽取自的线上产品。本技能负责复用或重建这份设计并让它可评审，从不根据一句话需求直接画页面。
 
@@ -21,7 +21,7 @@ AI 生成的界面有两个失败点，都与审美无关：
 
 | 阶段 | 目标 | 产物 |
 | --- | --- | --- |
-| 参照起草（没有设计时） | 以设计好的页面为起点，复用或重建，内容换成你的 | `<name>.html`，lever 已绑定 |
+| 参照起草（没有设计时） | 用参考的设计语言承载你的内容 | `<name>.html`，lever 已绑定 |
 | 接收 | 设计落到磁盘，token 绑定好 | `<name>.html`、一个 `:root` 块、`design-contract.md` |
 | 让它能用 | 草稿像真页面一样有行为 | 草稿运行时 + 评审面板接入，服务已启动 |
 | 迭代 | 改动可寻址、足够小 | 逐元素 patch，按 diff 评审 |
@@ -47,7 +47,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s ui-design-iteration
 
 ## 用法
 
-1. 还没有设计？先给页面分类，写出页面的论点（每个区块一条主张，以及真实存在的证据和图片），再从用户偏好的来源（没有偏好时用 `references/sources.md` 里的入门清单）挑两三个参考候选，让用户选定，研究并实测；模板公开了代码就复用，否则重建，内容换成你的（证据类内容绝不虚构），评审前先和参考并排比对（`references/drafting.md`）。已有设计则以单个 HTML 页面 + 真实文案的形式带进来（`references/intake.md`）。
+1. 还没有设计？先给页面分类，写出页面的论点（每个区块一条主张，以及真实存在的证据和图片），再从用户偏好的来源（没有偏好时用 `references/sources.md` 里的入门清单）挑两三个参考候选，让用户选定，研究并实测；写下它的设计语言，按内容规划区块，用这套语言复制、组合（只有截图时才重建）出每个区块（证据类内容绝不虚构），评审前先和参考并排比对（`references/drafting.md`）。已有设计则以单个 HTML 页面 + 真实文案的形式带进来（`references/intake.md`）。
 2. 把十三个 lever 绑进一个 `:root` 块，替换掉与它们重复的字面值；如果草稿抽取自现有产品，则改为映射产品自己的 CSS 自定义属性。
 3. 把 `templates/draft-kit.js` 复制到草稿旁边，用一个配置块和一个 script 标签接上。然后把草稿当页面用——菜单能开、弹窗能开、任何东西都不跳转。
 4. 运行 `scripts/draft_server.py <draft-dir> <port>`，通过它打开草稿。
@@ -62,7 +62,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s ui-design-iteration
 ui-design-iteration/
 ├── SKILL.md
 ├── references/
-│   ├── drafting.md     # 参照起草：论点、候选、实测；复用或重建；比对
+│   ├── drafting.md     # 参照起草：论点、设计语言、区块规划；复制或组合；比对
 │   ├── sources.md      # 用户来源优先、如何判断任意来源、一份注明核实日期的入门清单
 │   ├── intake.md       # 接收设计：要求什么、退回什么、如何映射到 lever
 │   ├── tokens.md       # 十三个 lever、抽取自产品的草稿、外部组件、明暗主题

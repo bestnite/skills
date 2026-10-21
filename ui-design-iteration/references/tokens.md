@@ -9,7 +9,7 @@ Thirteen sliders plus one declared value. A lever earns its place only if one `c
 | Lever | Controls | Typical range | What breaks without it |
 | --- | --- | --- | --- |
 | `--gap` | every padding, margin and inline gap, as a multiple of it | 12–24px | each block invents its own rhythm |
-| `--fs` | body text size | 15–18px | per-block font sizes appear |
+| `--fs` | body text size; on a page whose layout is in `rem`, the type sizes, not the root font size | 15–18px | per-block font sizes appear |
 | `--ratio` | type scale step; headings are `fs × ratio^n` | 1.2 / 1.25 / 1.333 | heading sizes stop relating to each other |
 | `--measure` | line length of running text | 45–75ch | long lines make every paragraph look unfinished |
 | `--radius` | the main radius; other radii derive from it or are a pill | 0 / 8–16px | mixed radii read as mixed systems |
@@ -65,7 +65,10 @@ The product's built stylesheet already encodes its design, usually through its o
 - Bind the panel to the properties the product already has: a token's `prop` names the product's property, its `unit` the unit the product uses.
 - Leave a lever out when the product has no single property for it. A slider that writes a property nothing reads is a control that lies.
 - Record the mapping (`--radius` ↔ `--radius-lg`) in `design-contract.md`.
-- **Splitting a colour into a lightness scalar is theme-specific.** A block that redefines the product's colour property from the scalar (`--foreground: oklch(var(--ink) 0 0)`) on `:root` overrides the product's `.dark` block too — same specificity, and the later file wins — so dark mode silently turns light. Scope the block to the theme it was measured in (`:root:not(.dark)`), and either measure a second set of scalars for the dark theme or leave those sliders inert there and say so in the contract.
+- **Bind `--fs` to the type sizes, not to `html { font-size }`,** when breakpoints, containers or spacing are in `rem` (Tailwind CSS's are): a root font size scales the whole layout, so `--fs: 21px` widens a 1280px container to 1680px.
+- **`--dur` reaches transitions only through the product's duration property.** Keyframe animations (`animate-pulse`, `--animate-*`) carry their own durations; say in the contract that the slider does not stop them.
+- **A product with a colour scale rather than a few colour properties** (Tailwind's `--color-gray-50` … `--color-gray-950`) is bridged scale-wide: let the scalar stand for one step (`--surface` for `gray-950`) and give every other step its measured lightness offset from it (`--color-gray-800: oklch(calc(var(--surface) + 15%) 0.03 262)`), so the steps move together and keep their spacing. Write the formula in the contract.
+- **Splitting a colour into a lightness scalar is theme-specific.** A block that redefines the product's colour property from the scalar (`--foreground: oklch(var(--ink) 0 0)`) on `:root` overrides the product's `.dark` block too — same specificity, and the later file wins — so dark mode silently turns light. Scope the block to the theme it was measured in (`:root:not(.dark)`), and either measure a second set of scalars for the dark theme or leave those sliders inert there and say so in the contract. A product with a single theme has no second block to override: bridge on `:root` directly.
 
 ## Mapping an external component onto the tokens
 

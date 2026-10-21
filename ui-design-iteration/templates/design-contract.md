@@ -8,18 +8,27 @@ Filled in at intake, kept next to the draft it describes, and handed over with i
 
 ## The argument
 
-One line per section, in page order: the claim it makes and the proof it shows. A section without a claim does not belong on the page.
+One line per section, in page order: the claim it makes, the proof it shows, its form (card grid, ruled list, table, band, …; neighbours differ), and where its design comes from (a reference section copied, a reference page, composed from the reference's parts, a supporting reference). A section without a claim or a requested part does not belong on the page.
 
-- <hero — the claim — the proof shown (product fragment, price, real figure)>
+- <hero — the claim — the proof shown (product fragment, price, real figure) — centred statement over a picture — copied from the reference's hero>
+
+## Design language
+
+What the main reference does and where, precise enough to check a section it never had. Signature devices are marked; each one has a place on this page.
+
+- <e.g. black and white only; one blue accent, used on small badges — signature>
+- <e.g. icons white on a black circle, left of each item's title>
+- <e.g. a soft indigo glow behind every section heading; a picture or glow at least once per screen — signature>
 
 ## Source
 
 - Designed by: <the main reference, design skill, agent or person that settled composition, type and palette — or "extracted from <product and route>">
 - Main reference: <name and URL of the template or site — or "none">
-- Taken as code: <parts reused from published code, with block name or repository — or "none">
-- Taken by measurement: <parts rebuilt from a demo, site or screenshot — or "none">
+- Taken as code: <parts copied from published code or saved from a live demo, with repository, block name or demo URL — or "none">
+- Taken by measurement: <parts rebuilt from a screenshot — or "none">
 - Supporting references: <URL — what was taken from it, e.g. "pricing table layout"; or "none">
-- Removed from the main reference: <each device or section dropped, why (audit limit, no claim, no imagery), and what took over its job — or "none">
+- Changed from the main reference: <each change to its look or sections, and the user decision behind it — or "none">
+- Placeholders from the main reference: <its illustrations, photographs or icons still in the draft, to replace with the product's own — or "none">
 - Alternatives rejected: <directions the design source considered and dropped, one line of reason each; "none recorded" if it did not say>
 - Copy deck: <where the final headlines and body text live>
 
@@ -60,7 +69,7 @@ A lever the design or template has no single property for is not bound. Write it
 
 ## Standing decisions
 
-Answers that are not re-litigated in a later session. A decision here overrides the matching default limit in the audit.
+Answers that are not re-litigated in a later session. A decision here overrides the matching default limit in the audit. For a draft copied from a reference, list the main reference's own devices here (its badges, icon rows, illustrations, gradients, shadows, radii): they are the design, not drift.
 
 - <e.g. no gradient anywhere>
 - <e.g. hero is left-aligned, never centred>
@@ -85,6 +94,7 @@ Answers that are not re-litigated in a later session. A decision here overrides 
 ## Hand-off
 
 - Draft runtime files: <`<name>-runtime.js`, `<name>-runtime.css`, `<name>-fragments.js`, `<name>-patches.css` — or "none">
+- Template source: <for route A — where the edited template source lives and the command that rebuilds the draft from it; when the source was not kept, the command that rebuilds the CSS and where the markup came from; or "none">
 - Changes made in the template's source vs. only in the draft's CSS: <for route A — which patches exist in component source, which only in `<name>-patches.css`>
 - Approximations: <behaviour the draft only imitates — e.g. focus trap, scroll lock, form submission>
 - Widths reviewed: <the design's breakpoints, or 375 / 768 / <desktop> px>

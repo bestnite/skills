@@ -1,6 +1,8 @@
 # Before reporting done — the audit
 
-The limits below are measurable, and they catch a page that reads as assembled faster than any aesthetic discussion. They are **defaults**: a decision recorded in `design-contract.md` overrides the matching limit, because this skill reports, it does not redesign. Audit the page against the limits the contract leaves standing, and list the waived ones in your report so the waiver is visible. The accessibility checks further down are different: they are not defaults, and no contract waives them.
+The limits below are measurable, and they catch a page that reads as assembled faster than any aesthetic discussion. They are **defaults**: a decision recorded in `design-contract.md` overrides the matching limit, because this skill reports, it does not redesign. Audit the page against the limits the contract leaves standing, and list the waived ones in your report so the waiver is visible.
+
+A draft built from a reference (Step 0, `references/drafting.md`) carries that reference's design language, and its devices — icon rows, badges, gradients, illustrations, shadows, extra radii — are standing decisions from the start, in copied and composed sections alike. The limits apply only to values and devices the design language does not contain; never remove one the main reference has to meet them. The accessibility checks further down are different: they are not defaults, and no contract waives them.
 
 ## Where the numbers come from
 
@@ -24,15 +26,16 @@ The limits below are measurable, and they catch a page that reads as assembled f
 6. **One card grid per page.** A second grid usually tells the same story twice.
 7. **One animated component.** The page needs one focal motion; transitions on hover and press do not count.
 8. **No eyebrow labels** — no small tracked label above a headline, no "New" chip. Put the information in the sentence.
-9. **No ornamental rules.** A divider separates content that space alone cannot (rows of a list, a table); a line used as decoration (grid lines, a box around every section) is removed.
-10. **Running text at full ink**, 16px or larger; reduced ink is for secondary notes only.
+9. **No icon-topped feature rows** — a row of equal items, each an icon above a title and a line. Lead with the claim and its proof instead.
+10. **No ornamental rules.** A divider separates content that space alone cannot (rows of a list, a table); a line used as decoration (grid lines, a box around every section) is removed.
+11. **Running text at full ink**, 16px or larger; reduced ink is for secondary notes only.
 
 ## How to count
 
 **In the browser (preferred).** Run `window.draftKit.audit()` in a browser you drive, or ask the reviewer to press "audit this state" on the panel and read `audit` from `selection.json`. It counts computed values on rendered elements — radii, shadows, type sizes and families, gradients, animations — so it is exact whatever produced the styles (`references/panel.md`).
 
 - It sees one state at one width. Run it for every state and every reviewed width (below), and merge the results before comparing with the limits: a radius used only inside the dialog still counts.
-- Read the maps against the limits: more than two keys in `radii` or `shadows`, more than five in `fontSizes`, more than two in `fontFamilies`, any entry in `gradients`, more than one component in `animated`.
+- Read the maps against the limits: more than two keys in `radii` or `shadows`, more than five in `fontSizes`, more than two in `fontFamilies`, any entry in `gradients`, more than one component in `animated`. On a draft built from a reference, tag every key with where it came from (the main reference, or this draft) — `examples` in the audit names an element that uses each key, so look at that element and the reference's measurements, not at a guess — and count only this draft's keys against the limits; report the reference's keys as standing decisions, not as excess.
 
 **From the source (fallback, no browser).** With `rg` (substitute `grep -rhoE` if it is not installed):
 
@@ -57,7 +60,7 @@ These patterns miss utility classes (`rounded-lg`, `text-sm`) and inline styles,
 
 These are not taste and no contract waives them: a page that fails them is broken for some of its readers.
 
-1. **Text contrast** — WCAG 2 AA: 4.5:1, or 3:1 for large text (≥24px, or ≥18.66px bold). `contrastFailures` in the audit lists every failing element with its ratio; `contrastUnknown` lists text over an image or gradient, which needs a look at a screenshot. `contrastApproximate` lists text the audit never saw on screen — inside a scroll container, or under a sticky header at every point — so its ratio comes from ancestors only: scroll each one into view and confirm it on a screenshot, or report it as unchecked. Check every theme: an accent that passes on white often fails on near-black.
+1. **Text contrast** — WCAG 2 AA: 4.5:1, or 3:1 for large text (≥24px, or ≥18.66px bold). `contrastFailures` in the audit lists every failing element with its ratio; `contrastUnknown` lists text over an image or gradient, which needs a look at a screenshot. `contrastApproximate` lists text the audit never saw on screen — inside a scroll container, or under a sticky header at every point — so its ratio comes from ancestors only: scroll each one into view and confirm it on a screenshot, or report it as unchecked. Check every theme: an accent that passes on white often fails on near-black. Read `transitions` in each result first: a result taken while a theme switch was still running is void, not failing.
 2. **Focus is visible.** Tab through the page in a browser: every interactive element shows where focus is, and nothing removes the outline without replacing it. Screenshot two or three focused states.
 3. **Everything works from the keyboard.** Menus, dialogs and drawers open with Enter or Space, close with Esc, and do not trap focus outside a dialog. In a draft these come from the draft runtime; name what it only approximates.
 4. **Touch targets** on a phone width are at least 24×24px (WCAG 2.2 AA), comfortably 44×44px. Measure the area that takes the click, not the element's text box: a stretched link's clickable area is its `::after` (the whole row), so its own box understates it; padding counts. A smaller target passes under WCAG's spacing exception: a 24px-diameter circle centred on its bounding box intersects no other target and no other undersized target's circle. Check with the browser: for each link, button and input, take `getBoundingClientRect()` (or the row it stretches over) and compare.

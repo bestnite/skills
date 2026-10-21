@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-A workflow skill that takes a UI from first draft to reviewed page: when there is no design yet, start from an existing, well-designed reference — reusing a template's open code where it publishes it, rebuilding from measurement where it does not — make it a live page, let a human point at any element, turn their words into a single-dimension patch, and verify the result.
+A workflow skill that takes a UI from first draft to reviewed page: when there is no design yet, take an existing, well-designed reference — its published code, or its live demo's rendered page — and carry its design language over to the content the page needs; make it a live page, let a human point at any element, turn their words into a single-dimension patch, and verify the result.
 
 It does not invent what the page looks like. The look comes from something already designed — a reference the user picked — from their own preferred sources first, otherwise from a starter catalogue (shadcn/ui, Tremor, TailAdmin, Cruip, Astro themes, Vercel templates; One Page Love, Recent, Mobbin) — a design skill or agent, the user, or the running product the draft was extracted from. This skill reuses or rebuilds that design and makes it reviewable; it never draws a page from a one-line brief.
 
@@ -21,7 +21,7 @@ The skill replaces both with structure: style is bound into a small set of token
 
 | Step | Goal | Output |
 | --- | --- | --- |
-| Draft from a reference (when there is no design) | a designed start, reused or rebuilt with the user's content | `<name>.html` with levers bound |
+| Draft from a reference (when there is no design) | the reference's design language over the user's content | `<name>.html` with levers bound |
 | Intake | the design on disk, tokens bound | `<name>.html`, one `:root` block, `design-contract.md` |
 | Make it live | the draft behaves like the page | draft runtime plus review panel attached, server running |
 | Iterate | changes become addressed and small | per-element patches, each read in a diff |
@@ -47,7 +47,7 @@ With only a one-line brief, the skill starts from a reference rather than genera
 
 ## How To Use It
 
-1. No design yet? Classify the page and write its argument — one claim per section, with the proof and imagery that really exist — shortlist references from the user's preferred sources (or the starter catalogue in `references/sources.md`), let the user pick, study and measure it, then reuse its open code or rebuild it with your content (never sampled proof), and compare the result with the reference before review (`references/drafting.md`). Otherwise bring the design in as one HTML page with real copy (`references/intake.md`).
+1. No design yet? Classify the page and write its argument — one claim per section, with the proof and imagery that really exist — shortlist references from the user's preferred sources (or the starter catalogue in `references/sources.md`), let the user pick, study and measure it, write down its design language, plan the sections from the content, copy, compose or (only from screenshots) rebuild them in that language (never sampled proof), and compare the result with the reference before review (`references/drafting.md`). Otherwise bring the design in as one HTML page with real copy (`references/intake.md`).
 2. Bind the thirteen levers into one `:root` block and replace the literals that duplicate them — or, for a draft extracted from a product, map the product's own custom properties.
 3. Copy `templates/draft-kit.js` next to the draft and attach it with one config block and one script tag. Use the draft as a page: menus open, dialogs open, nothing navigates.
 4. Start `scripts/draft_server.py <draft-dir> <port>` and open the draft through it.
@@ -62,7 +62,7 @@ With only a one-line brief, the skill starts from a reference rather than genera
 ui-design-iteration/
 ├── SKILL.md
 ├── references/
-│   ├── drafting.md     # starting from a reference: argument, shortlist, measure; reuse or rebuild; compare
+│   ├── drafting.md     # starting from a reference: argument, design language, section plan; copy or compose; compare
 │   ├── sources.md      # user's sources first, how to judge any source, a dated starter catalogue
 │   ├── intake.md       # receiving a design: what to require, what to send back, mapping onto the levers
 │   ├── tokens.md       # the thirteen levers, extracted products, external components, light and dark

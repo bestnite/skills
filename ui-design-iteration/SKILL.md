@@ -29,7 +29,7 @@ Out of scope, deliberately:
 
 Talk to the user in their own language; the questions below are written in English only so the skill does not fork.
 
-- **A shell with Node and network access** is needed only to render a framework template whose open code you reuse (Step 0, route A). Without one, ask the user to run it and send the output, take a part whose code is plain HTML, or rebuild that part from measurement.
+- **A shell with Node and network access** is needed only to render a framework template whose source you copy (Step 0, route A). Without one, ask the user to run it and send the output, or save the template's live demo instead.
 - **A browser the agent controls** is needed for screenshots and measurements of reference demos, for driving an app to capture its states, and for checking hit-testing. If you have a browser tool, use it; a headless browser you script from a shell (over the DevTools protocol, or with Playwright) counts as one. If you have neither, ask the user to open the page and send screenshots, and name every check you could not run yourself — a check that was skipped must not read as passed.
 - **A long-running process** is needed for `scripts/draft_server.py`, and on route A for the template's dev server. Start it with whatever mechanism your runtime offers for background processes; the port is the user's or the environment's choice, or `0` to take a free one. Record the PID of every process you start — the one that holds the port, which may be a child of the PID your shell reports (`$!` can be a wrapper) — and stop exactly those PIDs when done, then confirm they are gone (the process no longer listed, the port no longer answering) — never stop processes by name or pattern (`pkill next`, matching on a command line), because the machine may run other services with the same name.
 - **The selection** reaches you as `selection.json` in the draft directory while the server runs. If you drive the page in a browser, `window.draftKit.snapshot()` returns the same object and `window.draftKit.audit()` counts the rendered page. With neither, ask the user to read you the panel's readout — and treat it as a weaker reference than the file.
@@ -39,7 +39,7 @@ Talk to the user in their own language; the questions below are written in Engli
 
 | Step | Goal | Output |
 | --- | --- | --- |
-| 0 Draft from a reference | a designed starting point, reused or rebuilt with the user's content | `<name>.html` with levers bound |
+| 0 Draft from a reference | the reference's design language over the user's content and sections | `<name>.html` with levers bound |
 | 1 Intake | the design on disk, tokens bound | `<name>.html`, one `:root` block, `design-contract.md` |
 | 2 Make it live | the draft behaves like the page | draft runtime + review panel attached, server running |
 | 3 Iterate | changes become addressed and small | per-element patches, each read in a diff |
@@ -49,21 +49,21 @@ Skip Step 0 when a design already exists. Do not skip step 1's token binding. It
 
 ## Step 0 — Draft from a reference
 
-Start the draft from an existing, well-designed page; `references/drafting.md` is the procedure, and `references/sources.md` says how to judge any source and carries a starter catalogue for users without a preference.
+Take an existing, well-designed page and carry its design language over to your content; `references/drafting.md` is the procedure, and `references/sources.md` says how to judge any source and carries a starter catalogue for users without a preference.
 
-- **The argument before the references.** Write the page as claims with their proof, one line per section, and note the proof, imagery and stack that really exist: they decide which references can work, and which sections the page has.
+- **The argument before the references.** Write the page as claims with their proof, and note the proof, imagery and stack that really exist: with the parts the user asked for, they decide the page's sections and which references can serve them.
 - **The user's sources first.** Ask which libraries, template sites, galleries or sites they prefer, and search those before the starter catalogue.
-- **The user picks the main reference.** Shortlist two or three, show them with what the audit limits would remove from each, and let the user choose: choosing a reference is choosing a design.
-- **Study, then measure.** Screenshots give the structure; the live demo's computed styles give the values — type scale, spacing, radii, palette, timing — which become the levers.
-- **Reuse open code where the template publishes it; rebuild the rest.** Route A takes a template's published code (a code tab, a public repository), renders it once into static form and binds the levers to its own properties. Route B writes a part the reference shows but does not publish, in the draft's own tokens, from the measured values. Most drafts use both.
-- **Adapt content and scope, not design.** One reference owns the look; the content is the user's, not the reference's, and proof — customers, quotes, figures — is never sampled; delete what the argument does not need, and give a removed device's job to what remains; add sections from the same reference first.
-- **Compare before showing.** Screenshot the draft and the main reference at the same widths, and fix the differences nobody intended before the first review round.
+- **The user picks the main reference.** Shortlist two or three, show them, and let the user choose: choosing a reference is choosing a design.
+- **Study, then measure, then write down the design language.** Screenshots give the structure; the live demo's computed styles give the values — type scale, spacing, radii, palette, timing — which become the levers; a short list of what the reference does and where — its pictures, glows and their rhythm down the page included — with its signature devices marked, is what every section is held to.
+- **Copy the code; rebuild only from screenshots.** Route A, the default, takes the template's own source, or else the live demo's rendered page saved with its stylesheets, fonts, icons and images, keeps its markup and CSS, and binds the levers to whatever properties that CSS exposes. Route B rebuilds a part only when there is nothing to copy.
+- **Content decides the structure; the reference decides the look.** Plan the sections from the content: copy a reference section where one fits, take one from the reference's other pages, or compose one from its parts, in a form the reference uses and different from its neighbours' — not a table by default. Header layout, borders, background, accent colours, illustration and icon style, band widths stay as the reference has them in every section, every signature device keeps a place, and you pick no colour, typeface or border of your own. The text is the user's; the reference's pictures stay as placeholders until the user has their own; proof — customers, quotes, figures — is never sampled.
+- **Compare before showing.** Screenshot the draft and the main reference at the same widths: copied sections against their originals, composed sections against the design language, and the whole page for its signature devices, for neighbouring sections in the same form, and for stretches without a picture longer than the reference has. Fix the drift before the first review round.
 
 ## Step 1 — Intake
 
 - **One draft directory.** One HTML entry page, its CSS inline or in local files next to it, no build step, nothing fetched from the network — a draft must open offline, from disk, months later.
 - **Real copy.** Placeholder text hides the two failures that matter: a headline that does not fit, and a section with nothing to say.
-- **Bind the levers.** For a design delivered as a page, put the thirteen levers in one `:root` block — `--gap`, `--fs`, `--ratio`, `--measure`, `--radius`, `--hue`, `--ink`, `--surface`, `--line`, `--edge`, `--shadow`, `--room`, `--dur`, plus a declared `--ease` — and derive every tunable value from them. For a draft extracted from a running product, the product's stylesheet is the truth: bind the panel to the custom properties it already has and record the mapping, instead of rewriting its CSS. `references/tokens.md` has both cases.
+- **Bind the levers.** For a design delivered as a page, put the thirteen levers in one `:root` block — `--gap`, `--fs`, `--ratio`, `--measure`, `--radius`, `--hue`, `--ink`, `--surface`, `--line`, `--edge`, `--shadow`, `--room`, `--dur`, plus a declared `--ease` — and derive every tunable value from them. For a draft extracted from a running product or copied from a reference's code, that stylesheet is the truth: bind the panel to the custom properties it already has and record the mapping, instead of rewriting its CSS. `references/tokens.md` has both cases.
 - **Enumerate the conditional surfaces** the view can show. `references/intake.md` is the checklist for receiving a design without inheriting its gaps.
 - **Record the contract** in `design-contract.md` (copy `templates/design-contract.md`): the levers and their source, what was decided elsewhere, what was rejected, which values are samples.
 
@@ -88,7 +88,7 @@ Make every change addressable before making it fast.
 
 ## Step 4 — Audit and hand off
 
-`references/audit.md` has three parts. The default limits (two radii, two shadows, five type sizes, one card grid, no gradients, no icon-topped feature rows, …), counted with the panel's audit at every state and width: apply each one unless the contract records a decision that overrides it, and report what exceeds a limit before removing anything that is a design decision rather than drift. The accessibility checks (contrast, visible focus, keyboard, target size), which no contract waives. And the widths to review at.
+`references/audit.md` has three parts. The default limits (two radii, two shadows, five type sizes, one card grid, no gradients, no icon-topped feature rows, …), counted with the panel's audit at every state and width: apply each one to what the draft adds — the main reference's own devices are standing decisions — and unless the contract records a decision that overrides it, and report what exceeds a limit before removing anything that is a design decision rather than drift. The accessibility checks (contrast, visible focus, keyboard, target size), which no contract waives. And the widths to review at.
 
 A draft is finished when someone else can port it without a conversation. Hand over the draft directory **without** the review tooling (the `DRAFT_KIT` block, the `draft-kit.js` tag and file, `data-levers` attributes, `selection.json`), plus `design-contract.md` with its anchor map, its runtime file list, its named approximations, the widths and accessibility checks covered, and one line saying what is intentionally absent (data wiring, routing, states beyond the captured ones).
 
@@ -96,7 +96,7 @@ A draft is finished when someone else can port it without a conversation. Hand o
 
 | File | Read it when |
 | --- | --- |
-| `references/drafting.md` | Starting without a design: classify, shortlist, study and measure; reuse open code or rebuild; adapt. |
+| `references/drafting.md` | Starting without a design: classify, shortlist, study and measure, write down the design language; plan sections from content; copy, compose or rebuild; compare. |
 | `references/sources.md` | Which template catalogue or gallery for which page, what each lets you study, which publish code; dated. |
 | `references/intake.md` | Receiving a design: what to require, what to send back, mapping its system onto the levers. |
 | `references/tokens.md` | Binding the levers, extracted products, mapping external components, light and dark. |

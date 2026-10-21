@@ -1,6 +1,6 @@
 # Intake — receiving a design you did not make
 
-The design source decides. This file is the handoff: what to require, what to send back, and where this skill's authority stops. A draft rebuilt from a reference in Step 0 (`references/drafting.md`) arrives here like any other design; its main reference is its design source.
+The design source decides. This file is the handoff: what to require, what to send back, and where this skill's authority stops. A draft copied from a reference in Step 0 (`references/drafting.md`) arrives here like any other design; its main reference is its design source.
 
 ## What the input must be
 
@@ -8,7 +8,7 @@ The design source decides. This file is the handoff: what to require, what to se
 | --- | --- |
 | One HTML entry page with its CSS inline or in local files beside it | Unbundled SCSS or a component tree cannot be opened, and a draft that cannot be opened cannot be reviewed |
 | Real copy in real lengths | Placeholder text hides the two failures that matter: a headline that does not fit, a section with nothing to say |
-| The levers bound in one `:root` block (or, for an extracted product, its own custom properties mapped) | Literal values scattered through the CSS make every later request a rewrite instead of a number |
+| The levers bound in one `:root` block (or, for an extracted product or a reference's copied code, its own custom properties mapped) | Literal values scattered through the CSS make every later request a rewrite instead of a number |
 | The states the view can reach, at least enumerated | A dialog nobody wrote is a dialog the reviewer cannot judge |
 | No build step, nothing fetched from the network | A draft must open offline, from disk, months later |
 
@@ -16,7 +16,7 @@ If the design arrived as prose, materialize it once into that file. Materializin
 
 ## What to send back
 
-Send the design back to its source (or ask the user) when — for a draft from Step 0, "its source" means the main reference's other pages and section library, then the user:
+Send the design back to its source (or ask the user) when — for a draft from Step 0, "its source" means the main reference's other pages and section library; where neither covers the surface, compose it from the reference's parts (`references/drafting.md`, "Plan the page") and tell the user it is composed, and ask the user only when composing needs something the design language does not have:
 
 - a surface the page needs has no rule at all — empty state, error, loading, long-content overflow;
 - two sections would use the same composition, and the design gives no reason for the repetition;
@@ -36,7 +36,7 @@ A design source usually returns scale and spacing as prose or as its own variabl
 | `--ratio` | its type step (1.2 / 1.25 / 1.333) | `1.25` |
 | `--measure` | its line-length rule | `60ch` |
 | `--radius` | its main corner radius | `12px` |
-| `--hue` | its accent, as an OKLCH hue angle; lightness and chroma stay at the point of use, e.g. `oklch(58% .15 var(--hue))` | none — ask; an accent is a design decision |
+| `--hue` | its accent, as an OKLCH hue angle; lightness and chroma stay at the point of use, e.g. `oklch(58% .15 var(--hue))` | none — ask; an accent is a design decision. A reference with no accent stays without one: leave the lever unbound rather than invent a colour for the slider |
 | `--ink` | its text colour, reduced to an OKLCH lightness | `6%` |
 | `--surface` | its paper colour, as an OKLCH lightness | `99%` |
 | `--line` | its divider colour, as an OKLCH lightness | `91%` |

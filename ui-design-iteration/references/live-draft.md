@@ -50,7 +50,7 @@ A state the reviewer cannot reach is a state they will not review, and the most 
 
 ## The draft runtime
 
-Behaviour the product implements in JavaScript belongs next to the draft, in `<name>-runtime.js` and `<name>-runtime.css`: link neutralisation, menus, dialogs, drawers, empty states, theme switching. It is part of what the port must reproduce, which is exactly why it must not hide inside the review tooling. Panel state buttons call into it; they do not replace it.
+Behaviour the product implements in JavaScript belongs next to the draft, in `<name>-runtime.js` and, when it needs rules of its own, `<name>-runtime.css`: link neutralisation, menus, dialogs, drawers, empty states, theme switching. It is part of what the port must reproduce, which is exactly why it must not hide inside the review tooling. Panel state buttons call into it; they do not replace it.
 
 ## Every conditional surface belongs to the draft
 
@@ -67,6 +67,7 @@ Enumerate them from the source, then confirm each one by driving the app — a s
 Two traps:
 
 - **A captured fragment carries the entity it was captured from.** A confirmation captured as `Delete "Project Alpha"?` must show the name of whatever row the reviewer actually clicked.
+- **A state is a state of the data, not of one region.** An empty workspace has no unread count in the sidebar, no conflicts badge, no "page 1 of 2"; a deleted row lowers every total that counted it. When a state changes what exists, change every element on the screen that shows it, and check each state on a full-screen screenshot, not a crop of the region it was built for.
 - **Selection state may be plain attributes.** A row styled through `:has([data-state=checked])` needs only `data-state` flipped on its checkbox; adding a class of your own produces a state the product can never have.
 
 ## A rule that matches nothing fails silently
@@ -90,7 +91,7 @@ A state rule written from memory rather than from the captured markup often matc
 A measurement is not a verification. A collapsed sidebar can measure `64px` while the picture shows a full-width column with squeezed text, because the width lives on the outer element and the measurement was taken on the one inside it.
 
 - **Measure the node that owns the property.** When a computed value disagrees with the picture, the selector is wrong, not the picture.
-- **Check overflow, not just width.** Shrinking a container re-lays-out only what was shrunk; a row of avatar, gap, label and chevron can still spill past the new edge. Walk every descendant and compare `getBoundingClientRect().right` against the container's — the list of offenders must come back empty.
+- **Check overflow, not just width.** Shrinking a container re-lays-out only what was shrunk; a row of avatar, gap, label and chevron can still spill past the new edge. Walk every descendant and compare `getBoundingClientRect().right` against the container's — the list of offenders must come back empty, except for decoration clipped on purpose: an element with `pointer-events: none` inside an ancestor whose `overflow` clips it (a background glow, a blurred shape). For the page as a whole, `document.documentElement.scrollWidth` must equal `clientWidth` at every width.
 - **Look at every reviewed width**, not just the one the draft was built at — the widths are listed in `references/audit.md`. A desktop-only review signs off a phone layout nobody saw.
 - **Screenshot after every state change and look at it.** Widths, colours and computed styles can all pass while the state is visually broken. Without a browser of your own, ask the user for the screenshot and say which states you could not see.
 

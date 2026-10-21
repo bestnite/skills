@@ -16,7 +16,7 @@ Any source is usable; these questions tell you how (`references/drafting.md`):
 | Can its sections carry the page's argument? | A source whose structure needs content the product does not have gets filled with filler, or with proof nobody can back |
 | Does its look depend on pictures the user has? | A photograph-led design with no photographs to put in it rebuilds into an empty page |
 | Is there a live demo, or only screenshots? | A demo can be clicked through and measured — every state, every breakpoint; a screenshot gives structure only |
-| Does it publish its code? | Open code can be reused directly (route A); otherwise rebuild from measurement (route B) |
+| Is there code to copy? | Published code, or a live demo whose rendered page can be saved, is copied directly (route A); only a screenshot forces a rebuild (route B) |
 | Is the code in the stack the page will be ported to? | On route A the same stack makes the port nearly free; another stack gives a draft that only pictures the code |
 | Is it one consistent system? | A template or a design system carries consistent values; a collage of unrelated sites does not, so take one section from it, not the whole look |
 | Can you reach it? | Sources behind a login or paywall need the user to share screenshots or exports; do not try to sign in as them |
@@ -27,18 +27,18 @@ Facts verified on 2026-10-21 against each site. Catalogues reorganise; update th
 
 Two kinds of source, useful in different ways:
 
-- **Template catalogues** publish complete, consistent designs with live demos, and many publish their code too. A demo can be clicked through and measured — every state, every breakpoint — and open code can be reused directly (route A in `references/drafting.md`), so a template makes the best main reference.
-- **Galleries** collect shipped sites and products. They show range and real-world patterns but publish no code: rebuild from them (route B), for direction, a single section or flow, or to show the user what a choice looks like.
+- **Template catalogues** publish complete, consistent designs with live demos, and many publish their code too. A demo can be clicked through and measured — every state, every breakpoint — and its code, published or saved from the demo, can be copied directly (route A in `references/drafting.md`), so a template makes the best main reference.
+- **Galleries** collect shipped sites and products. They show range and real-world patterns but publish no code. A live site an entry links to can be saved and copied like a demo (route A); a screenshot alone is rebuilt (route B). Use them for direction, a single section or flow, or to show the user what a choice looks like.
 
 ### Template catalogues
 
 | Source | Best for | What you can study | Open code |
 | --- | --- | --- | --- |
-| shadcn/ui blocks (`ui.shadcn.com/blocks`) | app shells, dashboards, sidebars, login and signup, settings, data tables | each block's live preview; a coherent system of CSS variables (`--radius`, `--background`, `--primary` …) | yes — each block's code tab, or `npx shadcn add <block>`; React + Tailwind CSS |
+| shadcn/ui blocks (`ui.shadcn.com/blocks`) | app shells, dashboards, sidebars, login and signup, settings, data tables | each block's live preview; a coherent system of CSS variables (`--radius`, `--background`, `--primary` …) | yes — each block's code tab, `npx shadcn add <block>`, or the registry JSON `https://ui.shadcn.com/r/styles/<style>/<block>.json`; the code differs per style, so take the style the preview shows (the preview URL names it: `/view/new-york-v4/dashboard-01`) rather than the CLI's default; React + Tailwind CSS |
 | Tremor (`tremor.so`, blocks at `blocks.tremor.so`) | charts, KPI cards, filters, dashboard pages, reports, a SaaS marketing one-pager | component and block previews; chart styling in a dashboard context | components: copy-paste and npm (`tremorlabs/tremor`); blocks: public repository `tremorlabs/tremor-blocks`, while the site still lists some as premium — check the specific block |
 | TailAdmin (`tailadmin.com`) | admin dashboards, tables, forms, auth pages | a full multi-page admin demo | free edition: public repository, HTML + Alpine.js + Tailwind CSS (also React, Next.js, Vue, Angular, Laravel); pro edition: paid |
 | Cruip (`cruip.com`) | product landing pages, SaaS homepages, company sites; one dashboard (Mosaic) | live demos of each template; the demo pages on `cruip.com/demos/…` frame the template and can show only an error in a scripted browser — open the template's own demo address instead (its repository README links it, e.g. `simple.cruip.com`) | free templates: public repositories (the one checked is Next.js + Tailwind CSS); the rest: paid |
-| Astro themes (`astro.build/themes`) | blogs, docs, portfolios, e-commerce, landing pages | demos filtered by category | per theme: check the theme page for a linked repository; paid themes are sold, not published |
+| Astro themes (`astro.build/themes`) | blogs, docs, portfolios, e-commerce, landing pages | demos filtered by category | per theme: check the theme page for a linked repository; paid themes are sold, not published. A free theme with a repository builds to static HTML locally (`npm run build`), the best case for route A — Astroship is one |
 | Vercel templates (`vercel.com/templates`) | full sites of most kinds: commerce, CMS, docs, AI apps, blogs | organised by framework (mostly Next.js); each template has its own page with a demo | per template: check the template page for a linked repository |
 
 ### Galleries

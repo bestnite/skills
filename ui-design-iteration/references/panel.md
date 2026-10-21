@@ -33,6 +33,8 @@ Behaviours it guarantees, because each one breaks a review when missing:
 - **The readout shows text contrast** — see "How contrast is measured" below.
 - **"Audit this state" counts the page as rendered** — see below.
 - **While open, the panel reserves a gutter** (`padding` on `body`, on the panel's side, at ≥1180px) so it does not cover the page's flow. The gutter cannot move anything positioned against the viewport — a fixed drawer, a header button placed absolutely over the hero — so the panel may still cover those: swap it to the other side with `⇄` (remembered for the tab), or collapse it.
+- **Below 1180px the panel floats over the page.** At a phone width it covers most of it: collapse it ("hide") to look, press `P` and pick with it collapsed — picking does not need the panel open — then show it again to read the selection and write the mark. The snapshot records the width the selection was made at.
+- **The gutter narrows the layout.** At a 1280px window the page gets 944px and may fall below a desktop breakpoint, so the reviewer sees the tablet layout. To review the page at width W with the panel open, make the window W plus the gutter (1616px for 1280), or collapse the panel; `viewport.content` in the snapshot says which width the layout actually got.
 - **`H` hides the kit completely** — panel, badges, outline, gutter — and shows it again; `draftKit.hide(true|false)` does the same for an agent. Collapsing ("hide" in the header) still leaves a small tab on screen, so use `H` for screenshots.
 
 ## Config
@@ -58,7 +60,7 @@ window.DRAFT_KIT = {
 
 ### `data-levers`
 
-An anchor may carry `data-levers="gap,ink,line"` — token `key`s that matter for that component. The panel highlights those sliders when something inside the component is selected, and the snapshot reports them, so the agent knows which levers the reviewer was shown. Keys are collected from every anchor above the selection, nearest first: an answer inside `faq/item#2` inside `faq` reports both anchors' keys. A key that names no token is reported in the warning line when the page loads. It is review tooling: strip it at hand-off.
+An anchor may carry `data-levers="gap,ink,line"` — token `key`s that matter for that component. The panel highlights those sliders when something inside the component is selected, and the snapshot reports them, so the agent knows which levers the reviewer was shown. Keys are collected from every anchor above the selection, nearest first: an answer inside `faq/item#2` inside `faq` reports both anchors' keys. A key that names no token is reported in the warning line when the page loads. It is review tooling: strip it at hand-off — unlike `data-node`, which stays as the anchor map for the port.
 
 ## The snapshot
 
@@ -115,7 +117,7 @@ The WCAG 2 ratio of the text against what actually paints behind it, with the th
 
 ## Driving the panel from a script
 
-Picking and marking have no API: they are the reviewer's acts. To simulate a reviewer, send real input — `P`, pointer press and release on the element, text into the note field, then press the "mark" button (a synthesized Enter submits the form only when the key event carries its text, `\r`). Read the result from `selection.json` or `snapshot()`.
+Picking and marking have no API: they are the reviewer's acts. To simulate a reviewer, send real input — `P`, pointer press and release on the element, text into the note field, then click the "mark" button. Clicking is the reliable path; a synthesized Enter submits the note only when the key event carries its text (with the DevTools protocol, `Input.dispatchKeyEvent` with `type: "keyDown"`, `key: "Enter"` and `text: "\r"`). Read the result from `selection.json` or `snapshot()`.
 
 ## The audit
 
@@ -131,19 +133,27 @@ Picking and marking have no API: they are the reviewer's acts. To simulate a rev
   "rings": { "oklab(0.145 0 0 / 0.1) 0px 0px 0px 1px": 4 },
   "fontSizes": { "16px": 7, "12.8px": 2, "31.3px": 1, "20px": 1 },
   "fontFamilies": { "ui-sans-serif": 11 },
+  "examples": {
+    "radii": { "12px": "[data-node=\"kpis/card#1\"]", "pill": "[data-node=\"kpis\"] > header > span" },
+    "fontSizes": { "16px": "[data-node=\"kpis/card#1\"] > h3", "…": "…" },
+    "…": {}
+  },
   "gradients": [],
   "animated": [],
   "contrastFailures": [{ "target": "[data-node=\"kpis/card#2\"] > div:nth-child(2) > div:nth-child(2)", "ratio": 4.35, "required": 4.5 }],
   "contrastUnknown": [],
   "contrastApproximate": [],
-  "hiddenText": 4
+  "hiddenText": 4,
+  "transitions": 0
 }
 ```
 
 - Counts are of computed values, so they are exact whether the styles come from tokens, utility classes or inline styles. Each map is value → number of elements, most used first.
+- `examples` names, for each key of `radii`, `shadows`, `rings`, `fontSizes` and `fontFamilies`, the first element that uses it. Read it to tell where a value came from — a section copied from the reference, or one this draft added — before counting it against a limit.
 - Type sizes and families are counted only on elements with visible text of their own; screen-reader-only text is counted in `hiddenText` instead.
 - `shadows` are shadows that draw; a zero-size one (`--shadow: 0`) is dropped, and a layer with no offset and no blur but a spread — an outline drawn with box-shadow, such as Tailwind's `ring-1` — is counted under `rings`. A radius is keyed by its distinct non-zero corner values, so a box rounded only on its top corners (`12px 12px 0 0`) counts as `12px`; a radius large enough to round any box (`rounded-full`) is counted as `pill`.
 - Contrast is measured as described above. The audit scrolls the page one viewport at a time so every text can be hit-tested, and restores the scroll position; `contrastApproximate` lists the texts it could never see on screen (`target`, `ratio`, `required`), measured against their ancestors only. Content of a closed `<details>` or under `content-visibility: hidden` is not counted at all: it belongs to the open state, so audit that state too. `contrastFailures` entries over a non-linear gradient carry `gradient` and `range`.
+- `transitions` counts the CSS transitions running when the audit read the page (the panel's own excluded). Above 0, colours were read mid-change — right after a theme switch the audit reports dark surfaces over white and contrast failures that are not there — so wait until the transitions end and run it again.
 - It sees the current state only: elements hidden by an inactive state, a closed dialog or a breakpoint are not counted. Run it once per state and per width the reviewer signs off, and read `states` and `viewport` to know which one a result describes.
 - It reports facts, not verdicts. Comparing them with the limits, and with the waivers in the contract, is the agent's job (`references/audit.md`).
 

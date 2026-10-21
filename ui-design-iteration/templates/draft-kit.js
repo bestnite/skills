@@ -471,8 +471,13 @@
   // active are not counted, so run it once per state the reviewer signs off.
   // Limits and waivers are the agent's business (references/audit.md).
   function audit(){
+    // Each key keeps its first element, so the agent can tell which part of
+    // the page brought a value in (references/audit.md: tag keys by origin).
     const tally = () => new Map();
-    const add = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+    const add = (map, key, el) => {
+      const e = map.get(key);
+      if (e) e.n++; else map.set(key, {n: 1, el});
+    };
     const radii = tally(), shadows = tally(), rings = tally(), sizes = tally(), families = tally();
     const gradients = [], animated = [], texts = [];
     let elements = 0, hiddenText = 0;
@@ -482,16 +487,16 @@
       if (cs.visibility === 'hidden' || !el.getClientRects().length || unpainted(el)) continue;
       elements++;
       const radius = radiusOf(cs.borderRadius);
-      if (radius) add(radii, radius);
+      if (radius) add(radii, radius, el);
       const sh = shadowsOf(cs.boxShadow);
-      if (sh.shadows.length) add(shadows, sh.shadows.join(', '));
-      if (sh.rings.length) add(rings, sh.rings.join(', '));
+      if (sh.shadows.length) add(shadows, sh.shadows.join(', '), el);
+      if (sh.rings.length) add(rings, sh.rings.join(', '), el);
       if (cs.backgroundImage.includes('gradient(')) gradients.push(pathOf(el));
       if (cs.animationName !== 'none') animated.push(pathOf(el));
       if (!ownText(el)) continue;
       if (visuallyHidden(el)) { hiddenText++; continue; }
-      add(sizes, Math.round(parseFloat(cs.fontSize) * 10) / 10 + 'px');
-      add(families, cs.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, ''));
+      add(sizes, Math.round(parseFloat(cs.fontSize) * 10) / 10 + 'px', el);
+      add(families, cs.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, ''), el);
       texts.push(el);
     }
     // Contrast needs the text on screen to hit-test what paints behind it, so
@@ -525,13 +530,24 @@
       else if (!c.passes) contrastFailures.push(c.gradient ? {...entry(), gradient: true, range: c.range} : entry());
     }
     placeOverlays();
-    const rank = map => Object.fromEntries([...map].sort((a, b) => b[1] - a[1]));
+    // Colours read while a transition runs are in-between values: a theme
+    // switched a moment ago reports dark surfaces over white. Report the count
+    // so a result taken mid-transition is recognisable and gets re-run.
+    const transitions = typeof CSSTransition === 'undefined' ? null : document.getAnimations()
+      .filter(a => a instanceof CSSTransition && a.playState === 'running' &&
+        !(a.effect && a.effect.target && host && host.shadowRoot &&
+          a.effect.target.getRootNode() === host.shadowRoot)).length;
+    const sorted = map => [...map].sort((a, b) => b[1].n - a[1].n);
+    const rank = map => Object.fromEntries(sorted(map).map(([k, e]) => [k, e.n]));
+    const firstOf = map => Object.fromEntries(sorted(map).map(([k, e]) => [k, pathOf(e.el)]));
     return {
       elements, viewport: viewport(), states: stateFlags(),
       radii: rank(radii), shadows: rank(shadows), rings: rank(rings),
       fontSizes: rank(sizes), fontFamilies: rank(families),
+      examples: {radii: firstOf(radii), shadows: firstOf(shadows), rings: firstOf(rings),
+        fontSizes: firstOf(sizes), fontFamilies: firstOf(families)},
       gradients, animated, contrastFailures, contrastUnknown,
-      contrastApproximate, hiddenText,
+      contrastApproximate, hiddenText, transitions,
     };
   }
 
@@ -1049,7 +1065,7 @@
       for (const k of a.dataset.levers.split(',').map(s => s.trim()).filter(Boolean)) if (!known.has(k)) unknown.add(k);
     if (unknown.size) setWarn(`data-levers names no token: ${[...unknown].join(', ')} (keys are: ${[...known].join(', ')})`);
   }
-  window.draftKit = Object.freeze({ snapshot, audit, hide: on => setHidden(on !== false), version: 5 });
+  window.draftKit = Object.freeze({ snapshot, audit, hide: on => setHidden(on !== false), version: 6 });
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', start, {once: true});
 })();
