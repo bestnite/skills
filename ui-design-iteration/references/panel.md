@@ -25,7 +25,7 @@ Behaviours it guarantees, because each one breaks a review when missing:
 
 - **Picking is off by default.** Toggle with the button or `P` (keys are ignored while typing or with a modifier held); `Esc` leaves. In picking mode the page receives no pointer events at all — no menu opens, no link follows, no focus moves.
 - **Hit-testing is point-accurate.** It builds the stack with `document.elementsFromPoint()` and picks the first element whose own box covers the point, so a cell under a stretched link is selectable. Elements reached only through another element's pseudo-element stay in the layer list, dashed: they are legitimate targets ("the whole row link"), just not what the eye sees.
-- **Leaving picking mode keeps the readout.** The reviewer keeps talking about the element they just pointed at; only the visual marks (outline, hover box) go.
+- **Leaving picking mode keeps the readout.** The reviewer keeps talking about the element they just pointed at; only the hover outline goes. Numbered marks stay until the reviewer removes them.
 - **The panel reads the page, it does not assume it.** Each slider seeds from the computed value of its property, trusted only in the slider's unit: a `0.5rem` radius never lands in a px slider as `0.5`; the row is marked "(not read)" and shows `def`. A page value outside `min`/`max` widens the slider instead of being clamped, and the slider's grid shifts so a measured value off the `step` grid (3.333 with step 0.5) is shown and kept as it is, not snapped.
 - **Untouched sliders and state buttons re-read the page** after every click and keydown and every 500 ms, so a theme switched from the page's own menu shows up in the panel. A moved slider is marked `•` and keeps its inline value.
 - **Reset removes inline overrides** rather than writing defaults, so the page's own values — including its theme block and its reduced-motion query — come back.
@@ -113,6 +113,10 @@ The WCAG 2 ratio of the text against what actually paints behind it, with the th
 - **Approximate.** Text that is not on screen, or covered at every sample point (a sticky header over it), falls back to its ancestors' backgrounds (`"method": "ancestors"`); the readout says "approximate", and the audit lists the element under `contrastApproximate`.
 - **Not covered.** Element `opacity`, `mix-blend-mode`, filters and text shadows are ignored. Measure the colours as they are, not mid-transition: after switching a theme, wait for its transitions to finish before auditing.
 
+## Driving the panel from a script
+
+Picking and marking have no API: they are the reviewer's acts. To simulate a reviewer, send real input — `P`, pointer press and release on the element, text into the note field, then press the "mark" button (a synthesized Enter submits the form only when the key event carries its text, `\r`). Read the result from `selection.json` or `snapshot()`.
+
 ## The audit
 
 `window.draftKit.audit()` — or the panel's "audit this state" button, which puts the result in the snapshot — walks every rendered element and reports what the page actually uses:
@@ -139,7 +143,7 @@ The WCAG 2 ratio of the text against what actually paints behind it, with the th
 - Counts are of computed values, so they are exact whether the styles come from tokens, utility classes or inline styles. Each map is value → number of elements, most used first.
 - Type sizes and families are counted only on elements with visible text of their own; screen-reader-only text is counted in `hiddenText` instead.
 - `shadows` are shadows that draw; a zero-size one (`--shadow: 0`) is dropped, and a layer with no offset and no blur but a spread — an outline drawn with box-shadow, such as Tailwind's `ring-1` — is counted under `rings`. A radius is keyed by its distinct non-zero corner values, so a box rounded only on its top corners (`12px 12px 0 0`) counts as `12px`; a radius large enough to round any box (`rounded-full`) is counted as `pill`.
-- Contrast is measured as described above. The audit scrolls the page one viewport at a time so every text can be hit-tested, and restores the scroll position; `contrastApproximate` lists the texts it could never see on screen (`target`, `ratio`, `required`), measured against their ancestors only. `contrastFailures` entries over a non-linear gradient carry `gradient` and `range`.
+- Contrast is measured as described above. The audit scrolls the page one viewport at a time so every text can be hit-tested, and restores the scroll position; `contrastApproximate` lists the texts it could never see on screen (`target`, `ratio`, `required`), measured against their ancestors only. Content of a closed `<details>` or under `content-visibility: hidden` is not counted at all: it belongs to the open state, so audit that state too. `contrastFailures` entries over a non-linear gradient carry `gradient` and `range`.
 - It sees the current state only: elements hidden by an inactive state, a closed dialog or a breakpoint are not counted. Run it once per state and per width the reviewer signs off, and read `states` and `viewport` to know which one a result describes.
 - It reports facts, not verdicts. Comparing them with the limits, and with the waivers in the contract, is the agent's job (`references/audit.md`).
 
@@ -154,7 +158,7 @@ python3 scripts/draft_server.py <draft-dir> <port> [--host <interface>]
 - The port is the user's or the environment's choice; `0` takes a free one and prints it. The host defaults to `127.0.0.1`. Pass `--host 0.0.0.0` only when the browser runs on another host or container, because that exposes the directory listing and the write endpoint to the network.
 - Python 3 standard library only.
 
-`selection.json` is generated: keep it out of any repository that ships the draft, and delete it at hand-off.
+`selection.json` is generated: keep it out of any repository that ships the draft, and delete it at hand-off. It holds only the latest snapshot — any page with the kit attached and the server running overwrites it, including a browser you drive yourself. Read it (or copy it) before you open the draft in another tab or session.
 
 ## Live reload
 

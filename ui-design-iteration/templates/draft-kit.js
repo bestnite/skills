@@ -43,7 +43,8 @@
  * screenshots) and shows it again.
  *
  * API for an agent driving a browser: window.draftKit.snapshot(), .audit(),
- * .hide(true|false).
+ * .hide(true|false). Picking and marking have no API on purpose: they are the
+ * reviewer's acts. To simulate them, drive the pointer and the keyboard.
  */
 
 (() => {
@@ -437,9 +438,6 @@
   }
 
   // ----------------------------------------------------------------- audit ---
-  // Facts about the current state only: elements hidden by a state that is not
-  // active are not counted, so run it once per state the reviewer signs off.
-  // Limits and waivers are the agent's business (references/audit.md).
   // Split a computed box-shadow list into drawn shadows and rings: a layer with
   // no offset and no blur but a spread is an outline in disguise (Tailwind's
   // `ring-1`), and a layer that is all zeros draws nothing (`--shadow: 0`).
@@ -464,6 +462,11 @@
     return [...new Set(corners)].join(' ');
   };
 
+  // Content the browser keeps laid out but does not paint — a closed <details>,
+  // `content-visibility: hidden` — belongs to a state that is not active.
+  const unpainted = el => el.checkVisibility ? !el.checkVisibility()
+    : !!el.closest('details:not([open]) > :not(summary)');
+
   // Facts about the current state only: elements hidden by a state that is not
   // active are not counted, so run it once per state the reviewer signs off.
   // Limits and waivers are the agent's business (references/audit.md).
@@ -476,7 +479,7 @@
     for (const el of document.body.querySelectorAll('*')) {
       if (el === host || /^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT|LINK|META)$/.test(el.tagName)) continue;
       const cs = getComputedStyle(el);
-      if (cs.visibility === 'hidden' || !el.getClientRects().length) continue;
+      if (cs.visibility === 'hidden' || !el.getClientRects().length || unpainted(el)) continue;
       elements++;
       const radius = radiusOf(cs.borderRadius);
       if (radius) add(radii, radius);

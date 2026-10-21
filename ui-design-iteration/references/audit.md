@@ -68,7 +68,7 @@ Without a browser of your own, items 2–4 need the user: ask for them explicitl
 
 A page that passes at one width can fall apart at another. Review — and audit — at a phone width (375px), a tablet width (768px) and the desktop width the design was made for, plus the widths where the layout changes:
 
-- **Media-query breakpoints.** For each `min-width` breakpoint the page actually uses, check just below and at it (767 and 768 for a 768px breakpoint): the layout changes between them, and the width below is the one most often broken. A framework's full breakpoint list (Tailwind's `sm` to `2xl`) only counts where the page uses it.
+- **Media-query breakpoints.** For each breakpoint the page actually uses, check the two widths on either side of the switch: just below and at a `min-width` breakpoint (767 and 768 for `min-width: 768px`), at and just above a `max-width` one (900 and 901 for `max-width: 900px`). The layout changes between them, and the narrower side is the one most often broken. A framework's full breakpoint list (Tailwind's `sm` to `2xl`) only counts where the page uses it.
 - **Container queries.** Components sized by `@container` rules change with their container, not the window — a KPI grid whose third card drops to its own row when the sidebar is open. Find the container rules (`@container` in the CSS, `@xl/name:`-style utility classes) and check the widths at which each container crosses its thresholds, including with sidebars open and collapsed.
 
 At each width check overflow (no horizontal scroll, no descendant crossing its container's right edge), wrapping of headlines and buttons, and that nothing the reviewer must reach is hidden.

@@ -47,7 +47,7 @@ With only a one-line brief, the skill starts from a reference rather than genera
 
 ## How To Use It
 
-1. No design yet? Classify the page, shortlist references from the user's preferred sources (or the starter catalogue in `references/sources.md`), let the user pick, study and measure it, then reuse its open code or rebuild it, with your content (`references/drafting.md`). Otherwise bring the design in as one HTML page with real copy (`references/intake.md`).
+1. No design yet? Classify the page and write its argument — one claim per section, with the proof and imagery that really exist — shortlist references from the user's preferred sources (or the starter catalogue in `references/sources.md`), let the user pick, study and measure it, then reuse its open code or rebuild it with your content (never sampled proof), and compare the result with the reference before review (`references/drafting.md`). Otherwise bring the design in as one HTML page with real copy (`references/intake.md`).
 2. Bind the thirteen levers into one `:root` block and replace the literals that duplicate them — or, for a draft extracted from a product, map the product's own custom properties.
 3. Copy `templates/draft-kit.js` next to the draft and attach it with one config block and one script tag. Use the draft as a page: menus open, dialogs open, nothing navigates.
 4. Start `scripts/draft_server.py <draft-dir> <port>` and open the draft through it.
@@ -62,7 +62,7 @@ With only a one-line brief, the skill starts from a reference rather than genera
 ui-design-iteration/
 ├── SKILL.md
 ├── references/
-│   ├── drafting.md     # starting from a reference: classify, shortlist, measure; reuse open code or rebuild
+│   ├── drafting.md     # starting from a reference: argument, shortlist, measure; reuse or rebuild; compare
 │   ├── sources.md      # user's sources first, how to judge any source, a dated starter catalogue
 │   ├── intake.md       # receiving a design: what to require, what to send back, mapping onto the levers
 │   ├── tokens.md       # the thirteen levers, extracted products, external components, light and dark

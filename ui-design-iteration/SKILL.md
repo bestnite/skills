@@ -31,7 +31,7 @@ Talk to the user in their own language; the questions below are written in Engli
 
 - **A shell with Node and network access** is needed only to render a framework template whose open code you reuse (Step 0, route A). Without one, ask the user to run it and send the output, take a part whose code is plain HTML, or rebuild that part from measurement.
 - **A browser the agent controls** is needed for screenshots and measurements of reference demos, for driving an app to capture its states, and for checking hit-testing. If you have a browser tool, use it; a headless browser you script from a shell (over the DevTools protocol, or with Playwright) counts as one. If you have neither, ask the user to open the page and send screenshots, and name every check you could not run yourself — a check that was skipped must not read as passed.
-- **A long-running process** is needed for `scripts/draft_server.py`, and on route A for the template's dev server. Start it with whatever mechanism your runtime offers for background processes; the port is the user's or the environment's choice, or `0` to take a free one. Record the PID of every process you start — the one that holds the port, which may be a child of the PID your shell reports (`$!` can be a wrapper) — and stop exactly those PIDs when done — never stop processes by name or pattern (`pkill next`, matching on a command line), because the machine may run other services with the same name.
+- **A long-running process** is needed for `scripts/draft_server.py`, and on route A for the template's dev server. Start it with whatever mechanism your runtime offers for background processes; the port is the user's or the environment's choice, or `0` to take a free one. Record the PID of every process you start — the one that holds the port, which may be a child of the PID your shell reports (`$!` can be a wrapper) — and stop exactly those PIDs when done, then confirm they are gone (the process no longer listed, the port no longer answering) — never stop processes by name or pattern (`pkill next`, matching on a command line), because the machine may run other services with the same name.
 - **The selection** reaches you as `selection.json` in the draft directory while the server runs. If you drive the page in a browser, `window.draftKit.snapshot()` returns the same object and `window.draftKit.audit()` counts the rendered page. With neither, ask the user to read you the panel's readout — and treat it as a weaker reference than the file.
 - **Widths** are set in the browser: your browser tool's viewport, or the user resizing theirs. The snapshot records which width the reviewer saw.
 
@@ -51,11 +51,13 @@ Skip Step 0 when a design already exists. Do not skip step 1's token binding. It
 
 Start the draft from an existing, well-designed page; `references/drafting.md` is the procedure, and `references/sources.md` says how to judge any source and carries a starter catalogue for users without a preference.
 
+- **The argument before the references.** Write the page as claims with their proof, one line per section, and note the proof, imagery and stack that really exist: they decide which references can work, and which sections the page has.
 - **The user's sources first.** Ask which libraries, template sites, galleries or sites they prefer, and search those before the starter catalogue.
-- **The user picks the main reference.** Shortlist two or three, show them, let the user choose: choosing a reference is choosing a design.
+- **The user picks the main reference.** Shortlist two or three, show them with what the audit limits would remove from each, and let the user choose: choosing a reference is choosing a design.
 - **Study, then measure.** Screenshots give the structure; the live demo's computed styles give the values — type scale, spacing, radii, palette, timing — which become the levers.
 - **Reuse open code where the template publishes it; rebuild the rest.** Route A takes a template's published code (a code tab, a public repository), renders it once into static form and binds the levers to its own properties. Route B writes a part the reference shows but does not publish, in the draft's own tokens, from the measured values. Most drafts use both.
-- **Adapt content and scope, not design.** One reference owns the look; the content is the user's, not the reference's; delete what is not needed; add sections from the same reference first.
+- **Adapt content and scope, not design.** One reference owns the look; the content is the user's, not the reference's, and proof — customers, quotes, figures — is never sampled; delete what the argument does not need, and give a removed device's job to what remains; add sections from the same reference first.
+- **Compare before showing.** Screenshot the draft and the main reference at the same widths, and fix the differences nobody intended before the first review round.
 
 ## Step 1 — Intake
 

@@ -97,7 +97,7 @@ A measurement is not a verification. A collapsed sidebar can measure `64px` whil
 ## Checklist before calling a draft ready
 
 - [ ] No link in the draft navigates or reloads.
-- [ ] Picking is off by default; in picking mode the page does not react; leaving it clears the marks and keeps the readout.
+- [ ] Picking is off by default; in picking mode the page does not react; leaving it hides the hover outline and keeps the selection, its readout and the marks.
 - [ ] Clicking a cell inside a stretched-link row selects the cell, and the row link is still pickable from the layer list.
 - [ ] Every state the product reaches by interaction has either a working entry point or a panel button.
 - [ ] Every conditional surface of the view is present and reachable from the page itself.

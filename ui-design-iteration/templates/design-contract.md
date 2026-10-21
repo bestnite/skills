@@ -6,6 +6,12 @@ Filled in at intake, kept next to the draft it describes, and handed over with i
 
 <what this page is, who it is for, and the one thing it must make the reader do>
 
+## The argument
+
+One line per section, in page order: the claim it makes and the proof it shows. A section without a claim does not belong on the page.
+
+- <hero — the claim — the proof shown (product fragment, price, real figure)>
+
 ## Source
 
 - Designed by: <the main reference, design skill, agent or person that settled composition, type and palette — or "extracted from <product and route>">
@@ -13,6 +19,7 @@ Filled in at intake, kept next to the draft it describes, and handed over with i
 - Taken as code: <parts reused from published code, with block name or repository — or "none">
 - Taken by measurement: <parts rebuilt from a demo, site or screenshot — or "none">
 - Supporting references: <URL — what was taken from it, e.g. "pricing table layout"; or "none">
+- Removed from the main reference: <each device or section dropped, why (audit limit, no claim, no imagery), and what took over its job — or "none">
 - Alternatives rejected: <directions the design source considered and dropped, one line of reason each; "none recorded" if it did not say>
 - Copy deck: <where the final headlines and body text live>
 
@@ -62,7 +69,7 @@ Answers that are not re-litigated in a later session. A decision here overrides 
 
 ## Samples that must be confirmed
 
-<sample product names, prices, figures, dates used to reach full density — each one the user must replace or approve before launch>
+<sample product names, prices, figures, dates used to reach full density — each one the user must replace or approve before launch. Proof is never a sample: customers, testimonials, press, logos and usage figures appear only when the user supplied them.>
 
 ## Anchors
 
@@ -82,5 +89,5 @@ Answers that are not re-litigated in a later session. A decision here overrides 
 - Approximations: <behaviour the draft only imitates — e.g. focus trap, scroll lock, form submission>
 - Widths reviewed: <the design's breakpoints, or 375 / 768 / <desktop> px>
 - Accessibility: <contrast — audit clean at every state and width / exceptions; focus visible; keyboard; checked by agent or by user>
-- Intentionally absent: <data wiring, routing, states not captured>
+- Intentionally absent: <data wiring, routing, states not captured; proof placeholders waiting for real material>
 - Review tooling removed: <yes / no — the `DRAFT_KIT` block, `draft-kit.js`, `data-levers`, `selection.json`>

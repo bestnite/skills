@@ -47,7 +47,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s ui-design-iteration
 
 ## 用法
 
-1. 还没有设计？先给页面分类，从用户偏好的来源（没有偏好时用 `references/sources.md` 里的入门清单）挑两三个参考候选，让用户选定，研究并实测；模板公开了代码就复用，否则重建，内容换成你的（`references/drafting.md`）。已有设计则以单个 HTML 页面 + 真实文案的形式带进来（`references/intake.md`）。
+1. 还没有设计？先给页面分类，写出页面的论点（每个区块一条主张，以及真实存在的证据和图片），再从用户偏好的来源（没有偏好时用 `references/sources.md` 里的入门清单）挑两三个参考候选，让用户选定，研究并实测；模板公开了代码就复用，否则重建，内容换成你的（证据类内容绝不虚构），评审前先和参考并排比对（`references/drafting.md`）。已有设计则以单个 HTML 页面 + 真实文案的形式带进来（`references/intake.md`）。
 2. 把十三个 lever 绑进一个 `:root` 块，替换掉与它们重复的字面值；如果草稿抽取自现有产品，则改为映射产品自己的 CSS 自定义属性。
 3. 把 `templates/draft-kit.js` 复制到草稿旁边，用一个配置块和一个 script 标签接上。然后把草稿当页面用——菜单能开、弹窗能开、任何东西都不跳转。
 4. 运行 `scripts/draft_server.py <draft-dir> <port>`，通过它打开草稿。
@@ -62,7 +62,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s ui-design-iteration
 ui-design-iteration/
 ├── SKILL.md
 ├── references/
-│   ├── drafting.md     # 参照起草：分类、候选、实测；复用开放代码或重建
+│   ├── drafting.md     # 参照起草：论点、候选、实测；复用或重建；比对
 │   ├── sources.md      # 用户来源优先、如何判断任意来源、一份注明核实日期的入门清单
 │   ├── intake.md       # 接收设计：要求什么、退回什么、如何映射到 lever
 │   ├── tokens.md       # 十三个 lever、抽取自产品的草稿、外部组件、明暗主题

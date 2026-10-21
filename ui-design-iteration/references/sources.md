@@ -13,8 +13,11 @@ Any source is usable; these questions tell you how (`references/drafting.md`):
 | Question | Why it matters |
 | --- | --- |
 | Does it fit the page class? | A landing-page source stretched into a dashboard fails at tables, navigation depth and long content |
+| Can its sections carry the page's argument? | A source whose structure needs content the product does not have gets filled with filler, or with proof nobody can back |
+| Does its look depend on pictures the user has? | A photograph-led design with no photographs to put in it rebuilds into an empty page |
 | Is there a live demo, or only screenshots? | A demo can be clicked through and measured — every state, every breakpoint; a screenshot gives structure only |
 | Does it publish its code? | Open code can be reused directly (route A); otherwise rebuild from measurement (route B) |
+| Is the code in the stack the page will be ported to? | On route A the same stack makes the port nearly free; another stack gives a draft that only pictures the code |
 | Is it one consistent system? | A template or a design system carries consistent values; a collage of unrelated sites does not, so take one section from it, not the whole look |
 | Can you reach it? | Sources behind a login or paywall need the user to share screenshots or exports; do not try to sign in as them |
 
