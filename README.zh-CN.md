@@ -15,6 +15,7 @@
 - **[napcat-onebot](./napcat-onebot/)** — 通过自建 NapCat 协议端（OneBot 11 HTTP）操作 QQ：发群消息与私聊、按需拉聊天历史、查群与好友、上传文件；并含鉴权、retcode、id 精度与账号风控等失败模式，以及协议端本身的部署路径。
 - **[zitadel-administration](./zitadel-administration/)** — 通过 API 运营自建 ZITADEL 实例：服务账号及其三种认证方式、实例/组织/项目三级管理员角色、项目、OIDC/API/SAML 应用、组织、用户与角色授权；并含 connectRPC v2 与 legacy v1 REST 的分工、错误模型，以及至今只有 legacy API 能做的任务。
 - **[android-adb](./android-adb/)** — 用原生 `adb` 从主机终端操作 Android 设备：无线配对与 mDNS、设备选择与状态恢复、输入注入与显示/状态控制、logcat 与产物取证、`am instrument` 与 CI 门禁；并补上常见技能包缺的 UI 树 dump、bug report、ANR 证据、Doze 测试与测试机复位。
+- **[ui-design-iteration](./ui-design-iteration/)** — 把 UI 从初稿带到评审完成：从用户选定的参考起步——优先用户自己偏好的来源，没有时用入门清单——复用模板的开放代码或实测重建，而不是凭一句话生成；再把它变成可用的实时页面——样式收进 token，点选和标记元素让选区直接到达 agent，每次反馈变成带目标、单维度的 patch，并在每个宽度下检查度量上限与可访问性。
 
 ## 安装
 
@@ -49,6 +50,7 @@ video-edit-planner/       # SKILL.md + references/ + scripts/ + README
 zitadel-administration/   # SKILL.md + references/ + templates/ + README
 napcat-onebot/            # SKILL.md + references/ + README
 android-adb/              # SKILL.md + references/ + README
+ui-design-iteration/      # SKILL.md + references/ + scripts/ + templates/ + README
 ```
 
 其中若干技能原以独立仓库维护（那些仓库已归档并删除），现已合并到本仓库。

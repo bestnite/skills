@@ -15,6 +15,7 @@ A collection of agent skills for the [open agent skills ecosystem](https://www.n
 - **[napcat-onebot](./napcat-onebot/)** — Talk to QQ through a self-hosted NapCat protocol side (OneBot 11 over HTTP): send group and private messages, read chat history on demand, look up groups and friends, upload files — plus the auth, retcode, id-precision and account-risk failure modes, and how to bring the protocol side up.
 - **[zitadel-administration](./zitadel-administration/)** — Operate a self-hosted ZITADEL instance through its APIs: service accounts and their three authentication methods, administrator roles at instance/org/project level, projects, OIDC/API/SAML applications, organizations, users and role assignments — plus the connectRPC v2 versus legacy v1 REST split, the error model, and the tasks only the legacy API can still do.
 - **[android-adb](./android-adb/)** — Drive Android devices from a host shell with raw `adb`: wireless pairing and mDNS, transport selection and state recovery, input injection and display/state control, logcat and artifact capture, `am instrument` and CI gating — plus the UI-tree dumps, bug reports, ANR evidence, Doze testing and test-device reset that the common skill packs leave out.
+- **[ui-design-iteration](./ui-design-iteration/)** — Take a UI from first draft to reviewed page: start from a reference the user picks — their own preferred sources first, a starter catalogue otherwise — reusing open template code or rebuilding from measurement instead of generating from a brief, then make it a live page — bind style into tokens, pick and mark elements so the selection reaches the agent, turn each request into an addressed single-dimension patch, audit limits and accessibility at every width.
 
 ## Installation
 
@@ -51,6 +52,7 @@ video-edit-planner/       # SKILL.md + references/ + scripts/ + README
 zitadel-administration/   # SKILL.md + references/ + templates/ + README
 napcat-onebot/            # SKILL.md + references/ + README
 android-adb/              # SKILL.md + references/ + README
+ui-design-iteration/      # SKILL.md + references/ + scripts/ + templates/ + README
 ```
 
 Several of these skills were previously maintained as standalone repositories (now archived and deleted) and were consolidated here.

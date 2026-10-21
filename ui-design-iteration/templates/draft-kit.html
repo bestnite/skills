@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draft — demo page with the kit attached</title>
+<link rel="icon" href="data:,"><!-- keeps the console clean: no favicon 404 -->
+<!--
+  A DRAFT, and nothing else.
+
+  This file is what gets reviewed and what gets ported. The review tooling is the
+  two blocks at the end of <body>: a config object and one <script> tag. Delete
+  them and what remains is the draft:
+    - the markup, with data-node on section and component roots
+    - the page's own styles, every tunable value derived from the lever block
+    - the draft runtime: behaviour the product has in JavaScript (here, link
+      neutralisation and nothing else; in a real draft, <name>-runtime.js)
+
+  Why the split: whoever ports this must be able to tell the page from the panel
+  at a glance. Tooling mixed into the draft gets migrated by accident.
+-->
+<style>
+  :root{
+    /* the thirteen levers plus --ease — every tunable value below derives from these */
+    --gap: 16px;
+    --fs: 16px;
+    --ratio: 1.25;
+    --measure: 60ch;
+    --radius: 12px;
+    --hue: 24;
+    --ink: 6%;
+    --surface: 99%;
+    --line: 91%;
+    --edge: 1px;
+    --shadow: 0;
+    --room: 3;
+    --dur: 160ms;
+    --ease: cubic-bezier(.2,0,0,1);
+  }
+  /* ADAPT: a real page brings its own theme block; this one exists so the demo's
+     dark state has something to switch. ink, surface and line move together. */
+  .dark{ --ink: 94%; --surface: 6%; --line: 24%; }
+  @media (prefers-reduced-motion: reduce){ :root{ --dur: 0ms } }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:calc(var(--gap)*2);
+    font:var(--fs)/1.55 ui-sans-serif,system-ui,sans-serif;
+    color:oklch(var(--ink) 0 0);background:oklch(var(--surface) 0 0);
+  }
+
+  h1{font-size:calc(var(--fs)*var(--ratio)*var(--ratio)*var(--ratio));line-height:1.12;
+     margin:0 0 calc(var(--gap)*.75);font-weight:700}
+  h2{font-size:calc(var(--fs)*var(--ratio));line-height:1.25;margin:0 0 calc(var(--gap)*.5);font-weight:650}
+  p{max-width:var(--measure);margin:0 0 calc(var(--gap)*.75)}
+  .muted{color:oklch(var(--ink) 0 0 / .65)}
+  section + section, section + .card{margin-top:calc(var(--gap)*var(--room))}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    font:inherit;text-decoration:none;
+    padding:calc(var(--gap)*.5) var(--gap);
+    border:0;border-radius:var(--radius);
+    background:oklch(58% .15 var(--hue));color:#fff;cursor:pointer;
+    transition:transform var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  }
+  .btn:active{transform:scale(.985)}
+  .btn.ghost{background:transparent;color:inherit;border:var(--edge) solid oklch(var(--line) 0 0)}
+
+  /* A row made clickable with a stretched link. Kept because it is the pattern
+     that breaks naive picking: the cell you see sits under the link. */
+  .row{position:relative;display:flex;align-items:center;gap:var(--gap);
+       padding:var(--gap);border-bottom:var(--edge) solid oklch(var(--line) 0 0);
+       transition:background-color var(--dur) var(--ease)}
+  .row:hover{background:oklch(var(--line) 0 0 / .32)}
+  .row .name{font-weight:600;color:inherit;text-decoration:none}
+  .row .name::after{content:'';position:absolute;inset:0}
+  .row .count{margin-left:auto;font-size:calc(var(--fs)/var(--ratio));color:oklch(var(--ink) 0 0 / .65)}
+
+  /* A conditional surface: the empty state exists in the draft even though the
+     first paint never shows it. */
+  .empty{display:none;padding:var(--gap)}
+  [data-empty] .row{display:none}
+  [data-empty] .empty{display:block}
+
+  .card{border:var(--edge) solid oklch(var(--line) 0 0);border-radius:var(--radius);
+        padding:calc(var(--gap)*1.25);background:oklch(var(--surface) 0 0);
+        box-shadow:0 calc(2px*var(--shadow)) calc(14px*var(--shadow)) rgb(0 0 0/.07)}
+</style>
+</head>
+<body>
+
+<section data-node="hero" data-levers="fs,ratio,ink,measure">
+  <h1>Put the files back<br>on your own disk</h1>
+  <p>Three devices, one tree, nothing in the middle. Conflicts become versions, deletes go to a bin, offline writes queue up.</p>
+  <a href="/how-it-runs" class="btn" data-node="hero/cta" data-levers="radius,gap,hue,dur">See how it runs</a>
+  <a href="/docs" class="btn ghost" data-node="hero/docs" data-levers="radius,gap,edge,line">Docs</a>
+</section>
+
+<section data-node="pricing/list" data-levers="gap,ink,room,line">
+  <div class="row" data-node="pricing/row#1" data-levers="gap,ink,line">
+    <a href="/plans/free" class="name">Free plan</a>
+    <span class="count">unlimited devices</span>
+  </div>
+  <div class="row" data-node="pricing/row#2" data-levers="gap,ink,line">
+    <a href="/plans/team" class="name">Team plan</a>
+    <span class="count">$12 / seat</span>
+  </div>
+  <p class="empty muted" data-node="pricing/empty">No plans are on sale in your region yet.</p>
+</section>
+
+<div class="card" data-node="pricing/plan-card" data-levers="radius,shadow,gap,line,surface">
+  <h2>One price: zero</h2>
+  <p class="muted">Capacity is your disk.</p>
+  <button class="btn" data-node="pricing/plan-card/cta" data-levers="radius,gap,hue,dur">Download</button>
+</div>
+
+<!-- DRAFT RUNTIME — part of the draft, kept on hand-off. A draft is one page:
+     a link that navigates throws away the selection, the sliders and the open
+     state. Capture phase, so a stretched link cannot slip past it. -->
+<script>
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    // in-page anchors (#pricing) still scroll: that is part of the page
+    const href = a.getAttribute('href');
+    if (href.length > 1 && href.startsWith('#') && document.getElementById(href.slice(1))) return;
+    e.preventDefault();
+  }, true);
+</script>
+
+<!-- ======================================================================
+     REVIEW TOOLING — delete these two blocks to hand the draft over.
+     ====================================================================== -->
+<script>
+  window.DRAFT_KIT = {
+    // prop defaults to `--${key}`; the slider seeds from the page's own value
+    // and falls back to def only when the page value is not in `unit`.
+    tokens: [
+      {key:'gap',     min:8,   max:40,  step:1,    def:16,   unit:'px'},
+      {key:'fs',      min:13,  max:21,  step:0.5,  def:16,   unit:'px'},
+      {key:'ratio',   min:1.1, max:1.5, step:0.01, def:1.25},
+      {key:'measure', min:30,  max:90,  step:1,    def:60,   unit:'ch'},
+      {key:'radius',  min:0,   max:26,  step:1,    def:12,   unit:'px'},
+      {key:'hue',     min:0,   max:360, step:1,    def:24},
+      {key:'ink',     min:0,   max:30,  step:1,    def:6,    unit:'%'},
+      {key:'surface', min:90,  max:100, step:1,    def:99,   unit:'%'},
+      {key:'line',    min:70,  max:98,  step:1,    def:91,   unit:'%'},
+      {key:'edge',    min:0,   max:3,   step:1,    def:1,    unit:'px'},
+      {key:'shadow',  min:0,   max:1,   step:0.1,  def:0},
+      {key:'room',    min:1,   max:8,   step:0.5,  def:3,    suffix:'×'},
+      {key:'dur',     min:0,   max:400, step:10,   def:160,  unit:'ms'},
+    ],
+    // States the page cannot reach on its own. run() flips what the draft
+    // already contains (a theme class, an empty-state attribute); it never
+    // implements behaviour the port would need.
+    states: [
+      {id:'dark', label:'dark theme',
+       run(){ document.documentElement.classList.toggle('dark'); },
+       on(){ return document.documentElement.classList.contains('dark'); }},
+      {id:'empty', label:'no plans',
+       run(){ document.querySelector('[data-node="pricing/list"]').toggleAttribute('data-empty'); },
+       on(){ return document.querySelector('[data-node="pricing/list"]').hasAttribute('data-empty'); }},
+    ],
+  };
+</script>
+<script src="draft-kit.js" defer></script>
+</body>
+</html>
