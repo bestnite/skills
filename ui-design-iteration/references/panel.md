@@ -168,7 +168,7 @@ python3 scripts/draft_server.py <draft-dir> <port> [--host <interface>]
 - The port is the user's or the environment's choice; `0` takes a free one and prints it. The host defaults to `127.0.0.1`. Pass `--host 0.0.0.0` only when the browser runs on another host or container, because that exposes the directory listing and the write endpoint to the network.
 - Python 3 standard library only.
 
-`selection.json` is generated: keep it out of any repository that ships the draft, and delete it at hand-off. It holds only the latest snapshot — any page with the kit attached and the server running overwrites it, including a browser you drive yourself. Read it (or copy it) before you open the draft in another tab or session.
+`selection.json` is generated: keep it out of any repository that ships the draft, and delete it at hand-off. It holds only the latest snapshot — any page with the kit attached and the server running overwrites it, including a browser you drive yourself only to screenshot or audit. Read it (or copy it) before you open the draft in another tab or session.
 
 ## Live reload
 

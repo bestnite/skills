@@ -1037,8 +1037,9 @@
     [...ui.badges.children].forEach((badge, i) => {
       const el = marks[i] ? resolve(marks[i]) : null;
       const b = el && el.getBoundingClientRect();
-      // a badge for an element scrolled out of view would pin itself to an edge
-      if (!b || b.bottom < 0 || b.top > innerHeight || b.right < 0 || b.left > innerWidth) { badge.hidden = true; return; }
+      // a badge for an element scrolled out of view, or not rendered in this
+      // state (an empty rect at 0,0), would pin itself to an edge
+      if (!b || (!b.width && !b.height) || b.bottom < 0 || b.top > innerHeight || b.right < 0 || b.left > innerWidth) { badge.hidden = true; return; }
       badge.style.left = Math.max(2, b.left - 9) + 'px';
       badge.style.top = Math.max(2, b.top - 9) + 'px';
       badge.hidden = false;
