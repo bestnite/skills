@@ -94,8 +94,13 @@ mcp_servers:
 | `browser_cookie_set` / `get` / `list` / `delete` / `clear` | manage individual cookies |
 | `browser_storage_state` / `browser_set_storage_state` | save / restore cookies + localStorage |
 
-If the session must be loaded from a file rather than cookie-by-cookie, add
-`--isolated` and `--storage-state=/path/to/storage-state.json`.
+Without `--isolated`, Playwright MCP keeps a persistent profile, which is the
+preferred home for the session (`session-persistence.md`). With `--isolated` the
+profile lives in memory and is gone at exit; then load the saved session from this
+skill's state directory with
+`--storage-state=<skill dir>/.state/storage-state.json`, where `<skill dir>` is
+the directory this skill was loaded from — an absolute path only your install
+knows.
 
 **4. Verify** before touching Xianyu:
 
@@ -111,10 +116,9 @@ injection is the whole point.
 
 If the agent runs inside WSL but a Windows browser is the better citizen (no WSL
 graphics/GPU/Turnstile pain), keep Playwright MCP and the browser on the Windows
-side: put the config on Windows
-(`C:\Users\<username>\.hermes\playwright-mcp\config.json`), point
-`executablePath` at `.../chromium-<version>/chrome.exe`, and let the WSL-side
-agent drive it. Do **not** point the agent's `command` straight at
+side: put the config wherever the Windows-side client keeps its MCP configs,
+point `executablePath` at the `chrome.exe` path that `cloakbrowser info` reports
+when run on Windows, and let the WSL-side agent drive it. Do **not** point the agent's `command` straight at
 `/mnt/c/Program Files/nodejs/npx` — child processes started that way can lose
 their environment; use the wrapper form the guide prescribes.
 
@@ -148,7 +152,9 @@ binary lives. If the site starts rejecting the session anyway, that is the reaso
 
 ## After the tool exists
 
-1. Inject the Xianyu cookies (cookie tools, or a storage-state file), then open
+1. Get the Xianyu session into it — the persistent profile already has it, or
+   restore `.state/storage-state.json`, or inject a fresh jar with the cookie
+   tools (then save it as `session-persistence.md` describes). Open
    `https://www.goofish.com` and check you see the account rather than a login
    wall — that is the only session check worth doing.
 2. Follow `browser-search.md`: navigate to the search URL, scroll, evaluate the
@@ -171,8 +177,9 @@ binary lives. If the site starts rejecting the session anyway, that is the reaso
   appears to work for about a dozen calls, then risk control lands; that reads
   like a dead session and sends you debugging the wrong thing.
 - **Never invent kernel paths.** If `cloakbrowser info` cannot be run, leave the
-  placeholder and ask the user, or check for an existing install
-  (`~/.cloakbrowser/chromium-*/chrome`).
+  placeholder and ask the user for the path. Do not glob likely install
+  directories: a guessed path fails later and looks like a bug in the skill,
+  while "not configured" is an honest stop.
 - **One browser is enough.** If the agent already has a cookie-capable browser
   tool (cloak, Playwright MCP, browser-use, a CDP-attached Chromium), use it and
   skip this page entirely.

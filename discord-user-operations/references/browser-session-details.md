@@ -4,7 +4,7 @@ How to operate Discord through a logged-in browser session using *whatever* brow
 
 ## Session prerequisites
 
-- The browser session must be authenticated (a logged-in profile / restored storage state). Confirm by opening any `discord.com` page — the app shell shows the channel UI when logged in.
+- The browser session must be authenticated (a logged-in persistent profile, or the storage state restored from `<skill dir>/.state/storage-state.json` — see `session-persistence.md`). Confirm by opening any `discord.com` page — the app shell shows the channel UI when logged in.
 - Wait a few seconds after navigation before reading; the SPA renders asynchronously.
 
 ## Reading via the DOM (quick path)
@@ -28,7 +28,7 @@ Pitfalls:
 - Instead use your tool's **context-level storage export** (the session / storage-state dump): look for the `token` entry under the `https://discord.com` origin's localStorage.
 - The stored value may be JSON-encoded (a quoted string). Unwrap: `JSON.parse` it; if the result is a string, use it — otherwise use the raw value. Sanity check: a user token is three dot-separated segments.
 - Manual alternatives (when designing a flow for a human operator): DevTools → Network → any request → copy the `Authorization` header; or extract from the desktop app's LevelDB storage.
-- Handle the token like a password: never paste it into chat, logs, or non-secret files.
+- Handle the token like a password: never paste it into chat or logs, and never write it anywhere but `.state/` (`session-persistence.md`).
 
 ## Writing via in-page fetch (preferred)
 

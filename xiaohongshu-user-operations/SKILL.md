@@ -14,8 +14,9 @@ authorized authentication state change, not a business operation.
 This is a knowledge skill. It ships no service, no runtime, and no host-side HTTP
 client; it documents what to call and which mechanics matter. The business reads
 require `guest: false`. Login and session handling are documented in
-`references/login-and-session.md`; the browser owns credentials, and the skill
-writes no cookie file unless the user explicitly authorizes a storage export.
+`references/login-and-session.md`; the browser owns credentials. A browser with a
+persistent profile keeps the session; otherwise the skill saves it, after asking
+once, only to `.state/` in its own directory (`references/session-persistence.md`).
 
 ## Scope
 
@@ -248,6 +249,8 @@ as read-marking.
 `references/browser-session.md` (bootstrap, transport, errors, lifecycle);
 `references/read-api.md` (16 business reads, fields, limits, TOC);
 `references/login-and-session.md` (QR login, polling, cookie strategy, revocation);
+`references/session-persistence.md` (persistent profile first, `.state/` otherwise;
+shared with the repository's other browser skills); `.gitignore` (ignores `.state/`);
 `references/verification.md` (date, method, coverage, gaps);
 `templates/browser-api-bootstrap.js` (page-context bootstrap + one default read,
 not a CLI); `evals/evals.json` (offline checks, no cookies).

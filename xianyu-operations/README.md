@@ -24,7 +24,7 @@ Or copy the directory into your agent's skills folder.
 
 ## What is in here
 
-Three templates and four reference documents:
+Three templates and five reference documents:
 
 | File | Role |
 |---|---|
@@ -35,6 +35,8 @@ Three templates and four reference documents:
 | `references/browser-search.md` | The search extractor and browser steps, as text |
 | `references/write-operations.md` | Publish / take-down / message recipes, and the rules that govern writes |
 | `references/browser-tool-setup.md` | How to stand up a browser tool when the machine has none |
+| `references/session-persistence.md` | Where the session lives between runs: the browser's persistent profile first, `.state/` inside this skill otherwise |
+| `.gitignore` | Ignores `.state/`, the only place the skill writes session material |
 
 The narrow code is intentional, and it is a template rather than a tool: it
 computes the one thing that must be byte-exact, and lets you edit where your
@@ -47,7 +49,9 @@ instead of waiting for the skill to support its setup.
 - Python 3 (any recent version). No third-party packages: not `requests`, not
   `playwright`.
 - A logged-in Xianyu session (`unb` and `_m_h5_tk` are mandatory), loaded into
-  the browser tool.
+  the browser tool. A browser with a persistent profile keeps it between runs;
+  otherwise the agent saves it, after asking once, to `.state/storage-state.json`
+  inside this skill's directory and restores it from there.
 - A browser tool with three abilities: navigate and read the rendered DOM,
   evaluate JS in the page, and inject cookies (any mechanism — cookie API,
   storage-state file, CDP, or a profile the user already logged into). If the
@@ -79,9 +83,11 @@ outreach — that is where accounts get limited.
 
 ## Security
 
-A cookie file is a live account session. Keep it out of version control, out of
-chat logs, and out of the conversation; `chmod 600` it. To revoke it, use the
-Xianyu app's "log out of all devices".
+A saved session is a live account session. The skill writes it only to
+`.state/` inside its own directory (ignored by git, files `0600`) and never into
+chat logs or the conversation. Reinstalling the skill can delete `.state/`, which
+means logging in again. Deleting `.state/` does not end the session; to revoke
+it, use the Xianyu app's "log out of all devices".
 
 ## Notes
 

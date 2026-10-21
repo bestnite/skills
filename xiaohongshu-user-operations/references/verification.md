@@ -133,7 +133,7 @@ precondition.
   across sessions were tested. The skill must re-check identity in the same
   context before claiming a login.
 - **Session persistence and restore were not tested.** The dedicated persistent
-  profile and the optional storageState export/restore are documented strategy,
+  profile and the `.state/` storageState export/restore are documented strategy,
   not measured outcomes.
 
 ## What remains unverified
@@ -164,7 +164,7 @@ These are explicit gaps, not hidden assumptions:
   notification reply. (QR login is separated above; reset is not covered.)
 - A real human QR scan, the confirmed-to-authenticated transition, geo/activation
   completion, SMS or captcha handoff, and any final cookie creation.
-- Persistent-profile survival across sessions and a storageState restore.
+- Persistent-profile survival across sessions and a `.state/` storageState restore.
 - Long-run rate limits and account-risk behavior. Only bounded, low-frequency
   reads were exercised; no safe threshold is claimed.
 - Build durability. Module ids, wrapper names, and the registration pattern are

@@ -83,6 +83,13 @@ mcp_servers:
       - "--headless"
 ```
 
+Without `--isolated`, Playwright MCP keeps a persistent profile, which is the
+preferred home for the session (`session-persistence.md`). With `--isolated` the
+profile lives in memory; then also pass
+`--storage-state=<skill dir>/.state/storage-state.json`, where `<skill dir>` is
+the directory this skill was loaded from — an absolute path only your install
+knows.
+
 `--caps=storage` adds what Path B needs:
 
 | Tool | Purpose |
@@ -103,10 +110,9 @@ did not take effect — fix that first, because loading the session is the point
 
 If the agent runs inside WSL but a Windows browser is the better citizen (no WSL
 graphics/GPU/Turnstile pain), keep Playwright MCP and the browser on the Windows
-side: put the config on Windows
-(`C:\Users\<username>\.hermes\playwright-mcp\config.json`), point
-`executablePath` at `.../chromium-<version>/chrome.exe`, and let the WSL-side
-agent drive it. Do **not** point the agent's `command` straight at
+side: put the config wherever the Windows-side client keeps its MCP configs,
+point `executablePath` at the `chrome.exe` path that `cloakbrowser info` reports
+when run on Windows, and let the WSL-side agent drive it. Do **not** point the agent's `command` straight at
 `/mnt/c/Program Files/nodejs/npx` — child processes started that way can lose
 their environment; use the wrapper form the guide prescribes.
 
@@ -136,9 +142,11 @@ where the binary lives.
 
 ## After the tool exists
 
-1. Load the user's Discord session into it: a logged-in profile, or a
-   storage-state file containing the `token` entry for the `https://discord.com`
-   origin. Unwrapping details: `browser-session-details.md`.
+1. Load the user's Discord session into it: a logged-in persistent profile, or
+   the storage state saved in `.state/storage-state.json` (it holds the `token`
+   entry for the `https://discord.com` origin). Where to save it after a fresh
+   login: `session-persistence.md`. Unwrapping details:
+   `browser-session-details.md`.
 2. Open `https://discord.com` and confirm you see the app shell rather than a
    login screen — that is the session check; no code needed.
 3. Continue with `browser-session-details.md` (DOM reads, same-origin `fetch` for
@@ -153,8 +161,9 @@ where the binary lives.
   Path A needs no browser at all — that is often the faster unblock, and it is
   worth offering before spending turns on browser setup.
 - **Never invent kernel paths.** If `cloakbrowser info` cannot be run, leave the
-  placeholder and ask the user, or check for an existing install
-  (`~/.cloakbrowser/chromium-*/chrome`).
+  placeholder and ask the user for the path. Do not glob likely install
+  directories: a guessed path fails later and looks like a bug in the skill,
+  while "not configured" is an honest stop.
 - **One browser is enough.** If the agent already has a cookie-capable browser
   tool (cloak, Playwright MCP, browser-use, a CDP-attached Chromium), use it and
   skip this page entirely.

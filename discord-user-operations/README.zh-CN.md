@@ -24,6 +24,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
 
 - **接入路径 A（直连 HTTP）**：任意 HTTP 客户端 + 用户令牌。不需要浏览器，不需要装包。
 - **接入路径 B（浏览器会话）**：一个你能驱动的浏览器工具，且能触达已登录的 Discord 会话——需要能导航、能执行 JS，并使用用户自己已登录的 profile，或有办法注入其存储的令牌。有没有这样的工具，由 agent 看自己的 toolset 判断；没有时，[`references/browser-tool-setup.md`](./references/browser-tool-setup.md) 说明了怎么搭一个（CloakBrowser 内核挂在 Playwright MCP 后面，带上路径 B 需要的存储工具）——那是让你因地制宜的指导，不是让你去跑的脚本。
+- **在两次运行之间保留会话**：浏览器有持久 profile 时由它保留。没有时，agent 先征得一次同意，再把会话存到本技能目录下的 `.state/`（git 忽略、文件权限 `0600`），下次从那里恢复——见 [`references/session-persistence.md`](./references/session-persistence.md)。会话数据不会写到别处。
 
 ## 适用场景
 
@@ -65,6 +66,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
 - 使用用户令牌进行自动化处于 Discord 服务条款的灰色地带，请保持克制。
 - 任何他人可见的内容，发送前必须获得明确确认。
 - 把令牌当作密码：不要粘贴到聊天、日志或提交中。
+- 删除 `.state/` 不会让已保存的会话失效；要作废它，在 Discord 里退出该会话。重装技能可能删掉 `.state/`，届时需要重新登录。
 
 ## 致谢
 

@@ -16,9 +16,11 @@ the browser's job. There is deliberately no `SEND` switch.
 Three things are environment-specific, marked with `# EDIT`:
 
   1. COOKIES — where the user's session is. A raw "k=v; k=v" string, or a path to
-     a file holding one (raw, a JSON list from DevTools/Cookie-Editor, or a flat
-     dict). Prefer asking your browser tool for the jar scoped to the API host
-     (there can be two `_m_h5_tk` values; only one signs correctly — see below).
+     a file holding one (raw, a JSON list from DevTools/Cookie-Editor, a flat
+     dict, or a browser storage export such as <skill dir>/.state/storage-state.json
+     — see references/session-persistence.md). Prefer asking your browser tool for
+     the jar scoped to the API host (there can be two `_m_h5_tk` values; only one
+     signs correctly — see below).
   2. API / DATA — which endpoint and payload. See references/mtop-apis.md.
   3. FETCH — how your browser tool takes a snippet. It prints a ready-to-run
      `fetch()` call; which tool call wraps it differs per environment.
@@ -39,7 +41,8 @@ import time
 from pathlib import Path
 
 # ---------------------------------------------------------------- EDIT 1: cookies
-COOKIES = ""            # raw string, or a path to a file holding one
+COOKIES = ""            # raw string, or a path to a file holding one (for a saved
+                        # session: <skill dir>/.state/storage-state.json)
 # A jar can carry TWO `_m_h5_tk` values that both go to h5api.m.goofish.com (set
 # on .goofish.com and on .taobao.com). Only one is the live signing token; the
 # other answers FAIL_SYS_ILLEGAL_ACCESS. If that comes back, re-run with the other
@@ -85,13 +88,16 @@ def sign(token: str, t_ms: str, data: str, app_key: str = APP_KEY) -> str:
 
 # ------------------------------------------------------------------ plumbing
 def load_cookies(source: str) -> dict[str, str]:
-    """Raw string, or a file holding a raw string / JSON list / flat JSON dict."""
+    """Raw string, or a file holding a raw string / JSON list / flat JSON dict /
+    storage export ({"cookies": [...], "origins": [...]})."""
     text = source.strip()
     p = Path(text).expanduser()
     if text and "\n" not in text and "=" not in text and p.is_file():
         text = p.read_text(encoding="utf-8").strip()
     if text.startswith("[") or text.startswith("{"):
         data = json.loads(text)
+        if isinstance(data, dict) and isinstance(data.get("cookies"), list):
+            data = data["cookies"]
         if isinstance(data, list):
             return {c["name"]: c["value"] for c in data
                     if isinstance(c, dict) and "name" in c and "value" in c}

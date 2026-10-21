@@ -42,9 +42,10 @@ catalog: `read-api.md`. Field coverage and gaps: `verification.md`.
   guarantee for every page type. Search reads still need an existing search
   context from the user's normal search surface.
 
-The skill does not read cookie files, export browser storage, or ask for a user
-token. The credentials stay in the browser and are attached by the site's own
-client.
+The skill does not read cookie files or ask for a user token. The credentials
+stay in the browser and are attached by the site's own client; the only storage
+export is the browser tool saving the session into `.state/` when the browser has
+no persistent profile (`session-persistence.md`).
 
 ## Why use the site's client
 

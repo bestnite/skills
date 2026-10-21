@@ -20,7 +20,7 @@ source-only distinctions are in `verification.md`.
 - [Completion, geo routing, and handoff](#completion-geo-routing-and-handoff)
 - [Polling budget and pending state](#polling-budget-and-pending-state)
 - [Cookie and session strategy](#cookie-and-session-strategy)
-- [Fallback: explicit storageState export](#fallback-explicit-storagestate-export)
+- [Fallback: storageState in `.state/`](#fallback-storagestate-in-state)
 - [Revocation](#revocation)
 - [Secret handling](#secret-handling)
 - [Verification status](#verification-status)
@@ -194,70 +194,50 @@ A confirmed poll (`codeStatus: 2`) is not a completed login.
 
 ## Cookie and session strategy
 
+The shared rules — persistent profile first, `<skill dir>/.state/` otherwise,
+consent, permissions, restore, revocation — are in `session-persistence.md`.
+What follows is specific to Xiaohongshu.
+
 Default: a user-authorized dedicated persistent browser profile, one account.
 
-- The profile path is an environment decision: use the browser tool's own
-  reported path, a configured environment value, or an explicit user answer. Do
-  not guess a directory.
 - The browser owns cookie and storage attributes: `Set-Cookie`, `Secure`,
   `HttpOnly`, `SameSite`, domain, path, and expiry are handled by the browser and
   the site's own JavaScript. Do not copy or reconstruct them by hand.
 - `document.cookie` is neither complete nor recommended (it cannot see `HttpOnly`
   cookies). Do not rely on it as the session source.
-- Do not manually copy session cookie values, do not list sensitive cookie names
-  unless truly necessary, and do not export the whole logged-in profile when a
-  smaller projection is enough.
+- Do not manually copy session cookie values, and do not list sensitive cookie
+  names unless truly necessary.
 - A stable profile, kernel, and device environment can help session continuity,
   but this is not a binding guarantee and not anti-detection evasion.
 - A profile may not survive every session cookie change or a site-side
   revocation. Run the identity check on every use; never promise a permanent
   login.
 
-## Fallback: explicit storageState export
+## Fallback: storageState in `.state/`
 
-If there is no persistent profile, or the user explicitly asks for a backup, a
-storage-state export is a second, optional exception. It requires an explicit
-persistence authorization.
+When the browser tool has no persistent profile, or the user explicitly asks for
+a backup, export the session to `<skill dir>/.state/storage-state.json` as
+`session-persistence.md` describes: ask once, create it `0600` from the start,
+move it straight from the browser tool, never return its contents to the model.
 
-- Export from the browser tool or browser side directly to a secret path the user
-  or environment provides, outside the repository and outside shared
-  directories.
-- A configuration name such as `XHS_STORAGE_STATE` may be documented, but the
-  path is not hardcoded and `/tmp` is not the default.
-- Unix: directory `0700`, file `0600`. Windows: owner-only ACL. Create the
-  restrictive artifact from the start; write atomically (owner-side temp, then
-  rename) and recheck the permissions after the write. Do not write world-readable
-  and then `chmod`.
-- If the tool cannot write with those permissions, do not export; ask the user.
-- Never let the tool return the JSON or the credentials to the model or console,
-  and never put cookies in shell arguments.
-- The browser's remote filesystem is not the agent's filesystem: confirm the
-  export is available and that the write path is permitted. The secret location
-  is managed by the environment; log only a label, never the secret. A
-  user-owned path may be referenced by the user, but it does not go into the
-  skill.
-- `storageState` typically covers cookies and `localStorage`; IndexedDB only on a
-  supported version or option, and `sessionStorage` normally not. It is not the
-  full profile or device attributes.
-- Do not promise that a restore will work. Restore only an exact, user-approved
-  context from a user-approved file or tool; nothing guessed.
-- Do not ship or run a host-side cookie parser or CLI.
+- After a QR login that reached `guest: false`, that is the moment to save, so
+  the next run restores instead of logging in again.
+- On restore, the identity request with `guest: false` is the session check; a
+  `guest: true` after restore means the user signs in again.
+- Do not ship or run a host-side cookie parser or CLI; the browser tool writes
+  and reads the file.
 
 ## Revocation
 
 - A site logout invalidates the current session, and whether it invalidates the
   server side depends on the site.
-- Deleting an exported copy does **not** invalidate the server session.
-- Deleting a local profile is not a server-side revocation.
-- Revocation means the user logs out through the site's account/session or device
-  management, then deletes any local backup they own.
-- Do not clear a shared browser profile without permission.
-
-Persistence consent can cover continued writes to the configured path; do not
-ask for permission again on every refresh. Ask the first time when no persistence
-authorization exists, and never save silently. Saving credentials is an optional
-exception and does not relax the ban on persisting raw responses. Do not add a
-`.gitignore` entry as a substitute for a security boundary.
+- Deleting `.state/` or a local profile does **not** invalidate the server
+  session. Revocation means the user logs out through the site's account/session
+  or device management, then deletes `.state/`.
+- Do not clear a shared browser profile or delete `.state/` without permission.
+- Saving a session does not relax the ban on persisting raw responses. The
+  `.gitignore` keeps `.state/` out of commits; it is not access control — the
+  `0600` permissions are.
 
 ## Secret handling
 
@@ -275,5 +255,6 @@ exception and does not relax the ban on persisting raw responses. Do not add a
 - Source only: `codeStatus: 1`, `codeStatus: 2`, the `geoZone` branch, and the
   completion `GET /api/sns/web/v1/login/qrcode/status`.
 - Not verified end to end: a real human scan, the full activation loop, SMS or
-  captcha handoff, persistence across sessions, and a storageState restore.
+  captcha handoff, persistence across sessions, and a `.state/` storageState
+  restore.
 - Details and gaps: `verification.md`.

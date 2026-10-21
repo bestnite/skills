@@ -12,9 +12,10 @@ measurement behind it are in `mtop-apis.md`.
    with cookie injection: cloak, Playwright MCP, browser-use, a CDP-attached
    Chromium), or Playwright in the local environment. If neither exists, ask the
    user and follow `browser-tool-setup.md`.
-2. Cookie injection into that browser: a storage-state/session file, a
-   cookie-setting tool, CDP `Network.setCookie`, or a profile the user already
-   logged into. You need `unb` and `_m_h5_tk` at minimum, but injecting the whole
+2. The session in that browser: a persistent profile that already holds it, the
+   saved `.state/storage-state.json` restored, or fresh cookies injected with a
+   cookie-setting tool or CDP `Network.setCookie` (where it is kept between runs:
+   `session-persistence.md`). You need `unb` and `_m_h5_tk` at minimum, but injecting the whole
    Xianyu jar is closer to a real browser.
 3. Confirm the session **with a read call**, not by reading the header: the site's
    header can keep showing a `登录` control even with valid cookies injected.

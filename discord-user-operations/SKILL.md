@@ -16,7 +16,7 @@ Everything here is done through Discord's official REST API. This skill covers *
 - Verify identity before anything else: `GET /users/@me`. This also proves the credential works.
 - Prefer the REST API over UI interaction. Use the rendered page only for quick reads of what is already on screen.
 - Keep requests at a human pace; treat `429` as a pacing signal, not a retry-forever loop.
-- Never print, log, or store the token outside the user-approved secret location. A user token is account-takeover-grade.
+- Never print or log the token, and never store it outside this skill's `.state/` directory (`references/session-persistence.md`). A user token is account-takeover-grade.
 - Before editing or deleting, re-read the target and confirm its exact ID. Ambiguity → ask, never guess.
 - If a call is forbidden or unauthorized (`401`/`403`), stop and surface it rather than silently probing alternatives.
 
@@ -36,7 +36,10 @@ Works with any HTTP client (curl, requests, a script's fetch).
 
 **Prerequisite:** a browser tool you can drive that reaches a logged-in Discord
 session — it needs to navigate, evaluate JS, and either use the user's own
-logged-in profile or inject their stored token. **You can tell whether you have
+logged-in profile or inject their stored token. A browser with a persistent
+profile keeps the session between runs; otherwise save and restore it via
+`<skill dir>/.state/storage-state.json` (`references/session-persistence.md`).
+**You can tell whether you have
 one from your own toolset; do not probe the machine for it.** If you do not have
 one, do not improvise: read `references/browser-tool-setup.md` (text instructions
 you adapt locally, including how to stand up CloakBrowser behind Playwright MCP),
@@ -101,13 +104,15 @@ Stop and ask instead of improvising when:
 ## Compliance & Hygiene
 
 - User-token automation ("self-botting") is against Discord's ToS. Keep it personal, low-frequency, read-mostly; no mass actions, no automated outreach, nothing spam-shaped.
-- Token hygiene: never echo it into chat, logs, commits, or notes. Store only where the user approved it.
+- Token hygiene: never echo it into chat, logs, commits, or notes. If a Path A token is to be kept between runs, store it only in `<skill dir>/.state/token` (`0600`, after asking once); a browser session follows `references/session-persistence.md`. Deleting either does not invalidate the token — the user revokes it by logging out of that session or changing their password.
 
 ## Reference Routing
 
 - `references/discord-api-endpoints.md` — the full endpoint catalog (extracted from `olivier-motium/discord-user-mcp` + field-verified additions).
 - `references/browser-session-details.md` — tool-agnostic browser path: DOM hooks, composer fallback, storage pitfalls, virtualization.
 - `references/browser-tool-setup.md` — what to do when you have no browser tool (or no way to load the session): text setup instructions, no hardcoded paths.
+- `references/session-persistence.md` — where the session lives between runs: the browser's persistent profile first, `.state/` inside this skill otherwise.
+- `.gitignore` — ignores `.state/`, the only place this skill writes session material.
 
 ## Provenance
 

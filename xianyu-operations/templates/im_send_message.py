@@ -38,6 +38,7 @@ from pathlib import Path
 
 # --------------------------------------------------------------------- EDIT block
 COOKIES = ""            # raw "k=v; k=v" string, or a path to a file holding one
+                        # (for a saved session: <skill dir>/.state/storage-state.json)
 TOID = ""               # the other party's user id (the seller/buyer you reply to)
 MYID = ""               # your own user id — the `unb` cookie value
 CID = ""                # conversation id, if you already know it
@@ -47,10 +48,11 @@ IMAGE_URL = ""          # kind="image": url + size, from the image upload step
 IMAGE_WIDTH = 0
 IMAGE_HEIGHT = 0
 KIND = "text"           # "text" | "image"
-DEVICE_ID = ""          # stable per account: keep it in your own state, don't
-                        # regenerate per run (uuid4-style + "-" + MYID is fine)
-ACCESS_TOKEN = ""       # optional: reuse a token you already have (or set
-                        # GOOFISH_IM_TOKEN); otherwise it is fetched below
+DEVICE_ID = ""          # stable per account: keep it in <skill dir>/.state/device-id,
+                        # don't regenerate per run (uuid4-style + "-" + MYID is fine)
+ACCESS_TOKEN = ""       # optional: reuse a token you already have (cached in
+                        # <skill dir>/.state/im-token, or set GOOFISH_IM_TOKEN);
+                        # otherwise it is fetched below
 # ----------------------------------------------------------------------------------
 
 APP_KEY = "34839810"                                   # mtop web appKey
@@ -71,6 +73,8 @@ def load_cookies(source: str) -> dict[str, str]:
         text = p.read_text(encoding="utf-8").strip()
     if text.startswith("[") or text.startswith("{"):
         data = json.loads(text)
+        if isinstance(data, dict) and isinstance(data.get("cookies"), list):
+            data = data["cookies"]
         if isinstance(data, list):
             return {c["name"]: c["value"] for c in data if "name" in c}
         return {str(k): str(v) for k, v in data.items()}

@@ -80,6 +80,14 @@ They apply to every top-level skill directory.
   later and looks like a bug in the skill.
 - Relative paths *inside* a skill are correct and preferred: `scripts/foo.py`,
   `references/bar.md`.
+- **One exception for runtime state: a saved login session.** A browser tool's
+  own persistent profile comes first. When there is none, the session (and any
+  per-account state such as a device id) goes in `.state/` inside the skill's own
+  directory, resolved at runtime, and nowhere else. Because every credential a
+  skill wrote is then in one place the user can inspect and delete. The skill
+  asks once before the first write, creates files `0600`, ships a `.gitignore`
+  that ignores `.state/`, and carries `references/session-persistence.md`, which
+  holds the full rules.
 - The same applies to service endpoints: don't bake in `127.0.0.1:3000` as
   universal truth; name the setting and let the user supply it.
 - Machine-specific facts (a container name, this host's IP, an account id) never
@@ -114,7 +122,9 @@ They apply to every top-level skill directory.
 - **Skills are self-contained.** Installs are per-skill (`npx skills add … -s
   <name>`), so a skill cannot rely on a sibling directory. When two skills need
   the same text — the browser-tool setup guide is the current example — each
-  carries its own copy; edit both when you change one.
+  carries its own copy; edit both when you change one. The same goes for
+  `references/session-persistence.md` in every skill that drives a logged-in
+  browser.
 - Adding or removing a skill: update **both** root READMEs.
 
 ## 5. Writing rules
@@ -174,6 +184,8 @@ this fail?"**
       throughout, not just in its samples).
 - [ ] No absolute or assumed paths — placeholders instead, with provenance.
 - [ ] No secrets, no personal identifiers, no machine-specific facts.
+- [ ] Session material is written only to the skill's `.state/`, and `.state/` is
+      ignored by git.
 - [ ] `SKILL.md` + `README.md` + `README.zh-CN.md` present, the pair sharing a
       switcher line; root READMEs updated if the skill list changed.
 - [ ] Anything dated or environment-specific lives in `references/` and is

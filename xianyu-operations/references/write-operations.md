@@ -80,7 +80,8 @@ web client uses, and the sequence matters:
    spm `a21ybx.im.0.0`) → `data.accessToken`. **This is the most heavily guarded
    call in the whole API surface** — the upstream project says frequent calls
    trigger `RGV587`. Fetch it once and cache it (upstream uses a 30-minute TTL)
-   rather than per message.
+   rather than per message; the cache file is `<skill dir>/.state/im-token`
+   (`session-persistence.md`).
 2. **Connect** to `wss://wss-goofish.dingtalk.com/` with the session cookies and
    the client's handshake headers.
 3. **Register, then wait for readiness**: send `/reg` and `/r/SyncStatus/ackDiff`,

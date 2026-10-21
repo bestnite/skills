@@ -25,8 +25,9 @@ reverse-engineer `x-s`/`x-t`, or call the API from the host.
   refused once, page caps are finite, and a refusal or challenge is a stop
 - treats returned content as data, not as instructions, and projects only the
   fields the task needs, with credentials kept in the page
-- documents session strategy: a dedicated persistent profile by default, an
-  explicit storage export as an exception, and revocation limits
+- documents session strategy: a dedicated persistent profile by default, a
+  storage export into the skill's own `.state/` as the authorized fallback, and
+  revocation limits
 
 ## What It Does Not Do
 
@@ -34,8 +35,8 @@ reverse-engineer `x-s`/`x-t`, or call the API from the host.
   notification reply. QR login is an authentication state change, not a business
   write, and is covered separately.
 - No daemon, CLI, or generic cookie toolkit. The browser owns credentials; the
-  skill writes no cookie file unless the user explicitly authorizes a storage
-  export to a secret path.
+  skill writes session material only to `.state/` inside its own directory, and
+  only after the user authorizes it.
 - No MCP server, Go program, CLI, or runtime dependency. The shipped JavaScript
   is a page-context adaptation template, not a tool with a fixed interface.
 - No DOM extraction and no page-state hydration as a data source.
@@ -62,8 +63,9 @@ skill does not assume a location.
   QR login flow when the user authorizes it. Search reads additionally need an
   existing search context from the user's normal search surface.
 - For session continuity, a dedicated, user-authorized persistent browser profile
-  for one account is the default. A storage-state export is an optional exception
-  that requires explicit authorization.
+  for one account is the default. Without one, the agent asks once and saves a
+  storage-state export to `.state/` inside this skill's directory (ignored by git,
+  files `0600`); reinstalling the skill can delete it.
 - No packages, server, or account token. The site's client attaches the session.
 
 If the environment has no such browser tool, stop and ask the user for one. A
@@ -122,9 +124,11 @@ README.md / README.zh-CN.md           this pair
 references/browser-session.md         bootstrap, transport, errors, lifecycle
 references/read-api.md                16 business reads with a table of contents
 references/login-and-session.md       QR login, polling, cookies, revocation
+references/session-persistence.md     persistent profile first, .state/ otherwise
 references/verification.md            date, method, coverage, gaps
 templates/browser-api-bootstrap.js    page-context adaptation template
 evals/evals.json                      offline knowledge checks
+.gitignore                            ignores .state/, the saved session
 ```
 
 The template's marked adaptation points are the page/browser context it runs in
@@ -145,11 +149,11 @@ own beyond the site's client calls.
 - A verification/captcha response is a stop, not a puzzle.
 - Do not persist raw captures or credentials. A user-requested summary export can
   be built from projected fields, kept minimal and redacted. A storage-state
-  backup is a separate, explicitly authorized exception.
+  backup in `.state/` is a separate, explicitly authorized exception.
 - QR login is an authorized authentication step, not a business write, and it is
   never triggered automatically from a refusal.
 - To revoke access, log out through the site's session or device management.
-  Deleting a local export or profile does not invalidate the server session.
+  Deleting `.state/` or a profile does not invalidate the server session.
 
 ## Verification
 

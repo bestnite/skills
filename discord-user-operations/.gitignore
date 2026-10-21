@@ -13,3 +13,6 @@ Thumbs.db
 *.tmp
 *.bak
 .codex
+
+# Saved browser sessions — see references/session-persistence.md
+.state/

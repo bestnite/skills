@@ -31,6 +31,11 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
   [`references/browser-tool-setup.md`](./references/browser-tool-setup.md) explains
   how to stand one up (CloakBrowser kernel behind Playwright MCP, with the storage
   tools Path B needs) — as instructions to adapt, not a script to run.
+- **Keeping the session between runs:** a browser with a persistent profile keeps
+  it. Otherwise the agent, after asking once, saves it to `.state/` inside this
+  skill's directory (ignored by git, files `0600`) and restores it from there —
+  see [`references/session-persistence.md`](./references/session-persistence.md).
+  Session material is written nowhere else.
 
 ## When To Use It
 
@@ -72,6 +77,7 @@ Edit my last message to fix the wording.
 - User-token automation sits in a gray area under Discord's Terms of Service: keep it considerate.
 - Anything visible to others requires explicit confirmation before it is sent.
 - Treat your token like a password: never paste it into chats, logs, or commits.
+- Deleting `.state/` does not invalidate a saved session; log out of that session in Discord to revoke it. Reinstalling the skill can delete `.state/`, which means logging in again.
 
 ## Credits
 

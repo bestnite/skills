@@ -16,7 +16,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s xianyu-operations
 
 ## 目录里有什么
 
-三个模板加四份参考文档：
+三个模板加五份参考文档：
 
 | 文件 | 作用 |
 |---|---|
@@ -27,13 +27,15 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s xianyu-operations
 | `references/browser-search.md` | 搜索提取器与浏览器操作步骤（纯文本） |
 | `references/write-operations.md` | 发布 / 下架 / 发消息的配方，以及约束写操作的规则 |
 | `references/browser-tool-setup.md` | 本机没有浏览器工具时怎么搭一个 |
+| `references/session-persistence.md` | 会话在两次运行之间存在哪：优先用浏览器自己的持久 profile，否则存到本技能目录下的 `.state/` |
+| `.gitignore` | 忽略 `.state/`——技能写入会话数据的唯一位置 |
 
 代码刻意做窄，而且是模板而非成品工具：它只算那件必须逐字节准确的事，同时把"会话放在哪、驱动哪个浏览器、失败怎么重试"留给你改。依赖环境、依赖判断的部分全部留在文档里，让 agent 能因地制宜，而不是等技能去适配自己的环境。
 
 ## 依赖
 
 - Python 3（任意较新版本）。不需要任何第三方包：不需要 `requests`，也不需要 `playwright`。
-- 一个已登录的闲鱼会话（`unb` 与 `_m_h5_tk` 必填），装进浏览器工具里。
+- 一个已登录的闲鱼会话（`unb` 与 `_m_h5_tk` 必填），装进浏览器工具里。浏览器有持久 profile 时由它保留会话；没有时，agent 先征得一次同意，再把会话存到本技能目录下的 `.state/storage-state.json`，下次从那里恢复。
 - 一个具备三项能力的浏览器工具：导航并读取渲染后的 DOM、在页面里执行 JS、注入 cookie（方式不限——cookie API、storage-state 文件、CDP，或用户已登录的 profile）。若环境里没有，按 `references/browser-tool-setup.md` 搭一个。
 
 ## 用法
@@ -54,7 +56,7 @@ python3 mtop_request.py
 
 ## 安全
 
-cookie 文件等同于一个活着的账号会话。别进版本库、别进聊天记录、别贴进对话里；权限设成 `600`。要作废它，用闲鱼 App 里的"退出所有设备"。
+保存下来的会话等同于一个活着的账号会话。技能只把它写进自己目录下的 `.state/`（git 忽略、文件权限 `0600`），不进聊天记录，也不贴进对话。重装技能可能删掉 `.state/`，届时需要重新登录。删除 `.state/` 并不会让会话失效；要作废它，用闲鱼 App 里的"退出所有设备"。
 
 ## 说明
 

@@ -75,9 +75,11 @@ change the marked lines, run it.
 
 **1. Establish the session — in the browser.** Xianyu needs a logged-in browser
 session; the credentials are the site's own session cookies (`unb` and
-`_m_h5_tk` at minimum). Put the jar into your browser tool via whatever
-mechanism it has (a cookie-setting tool, a storage-state file, CDP
-`Network.setCookie`, or a profile the user already logged into), then confirm by
+`_m_h5_tk` at minimum). A browser tool with a persistent profile keeps them
+between runs; otherwise restore `.state/storage-state.json` (see "Handling the
+session cookies"), or put a fresh jar into the browser via whatever mechanism it
+has (a cookie-setting tool, a storage-state file, CDP `Network.setCookie`, or a
+profile the user already logged into). Then confirm by
 **looking at the page**, not by calling an endpoint: open
 `https://www.goofish.com` and check for the account's own nickname.
 
@@ -181,15 +183,22 @@ listing created without a price, message sent with a late ack). Read first.
 Required: **`unb`** and **`_m_h5_tk`**. Missing either means every request is
 treated as signed-out. Useful extras: `cookie2`, `_tb_token_`, `sgcookie`, `cna`.
 
-Preferred home for the jar is **the browser tool's own session store** — a
-storage-state file, the cookie API, or the user's existing logged-in profile —
-because that is what the in-page `fetch()` sends. Keep a raw copy on disk only if
-the browser tool needs one to load.
+Where the jar lives between runs follows `references/session-persistence.md`:
 
-**Security:** the jar is a live account session. Keep it out of version control,
-out of chat logs, and out of the conversation; `chmod 600` any file holding it and
-put it somewhere short-lived if the user did not say otherwise. Afterwards, tell
-the user they can revoke it from the Xianyu app ("log out of all devices").
+1. **A browser tool with a persistent profile** keeps it — write no file, because
+   that profile is exactly what the in-page `fetch()` sends.
+2. **Otherwise** save the tool's storage export to
+   `<skill dir>/.state/storage-state.json` (after asking once) and restore it from
+   there next run. Nothing session-related is written outside `.state/`.
+
+Other per-account state goes in the same directory: the IM device id in
+`.state/device-id` and a cached IM access token in `.state/im-token` (see
+`templates/im_send_message.py`).
+
+**Security:** the jar is a live account session. Keep it out of chat logs and out
+of the conversation; files under `.state/` are `0600`, created that way. Deleting
+`.state/` does not end the session — tell the user they revoke it from the Xianyu
+app ("log out of all devices").
 
 ## Pitfalls
 
@@ -241,6 +250,10 @@ the user they can revoke it from the Xianyu app ("log out of all devices").
   WebSocket sequence, and the rules that govern them.
 - `references/browser-tool-setup.md` — how to stand up a browser tool when the
   environment has none.
+- `references/session-persistence.md` — where the session lives between runs: the
+  browser's persistent profile first, `.state/` inside this skill otherwise.
+- `.gitignore` — ignores `.state/`, the only place this skill writes session
+  material.
 - `templates/mtop_request.py`, `templates/publish_item.py`,
   `templates/im_send_message.py` — copy, adapt, run.
 
