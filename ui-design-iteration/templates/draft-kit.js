@@ -11,9 +11,13 @@
  *
  * What it does
  *   - sliders bound to the page's own custom properties, seeded from the page
- *   - picking mode, off by default (toggle button, `P`, `Esc` leaves), with
+ *   - a small toolbar floating in a corner (drag it to another one); the
+ *     panel with selection, marks, levers and audit opens from it and floats
+ *     too, so the page keeps the layout of the real window width
+ *   - picking mode, off by default (toolbar button, `P`, `Esc` leaves), with
  *     point-accurate hit-testing, a layer list and a parent step
- *   - marks: several elements, each with the reviewer's note, numbered on the page
+ *   - marks: a note box opens next to the picked element; Enter marks it, and
+ *     marks are numbered on the page
  *   - contrast of the selected element's text against its effective background
  *   - an audit of the current state: distinct radii, shadows, type sizes and
  *     families, gradients, animations, contrast failures
@@ -32,15 +36,18 @@
  *             def    shown only when the page value cannot be read in `unit`
  *             apply  (value|null, setVar) => void, for a token that writes
  *                    several properties; null means "back to the page value"
- *   states  [{id, label, run(), on()}]   buttons for states the page cannot reach
+ *   states  [{id, label, run(), on(), off?()}]   buttons for states the page
+ *             cannot reach; a click on an active state calls off(), or run()
+ *             again when there is none, so run() must toggle unless off() exists
  *   post    snapshot endpoint, default '/__select'; null disables posting
- *   gutter  px reserved beside the panel while it is open (≥1180px wide), default 336
- *   side    'right' (default) or 'left'; the reviewer can swap it from the panel
+ *   gutter  px to reserve beside the open panel (≥1180px wide), default 0: the
+ *           panel floats; a gutter narrows the page, and its layout with it
+ *   side    'right' (default) or 'left'; the reviewer can drag the toolbar
  *   watch   false disables live reload
  *   ignoreClass  RegExp of utility classes skipped when building a path
  *
- * Keys: `P` picking, `Esc` leaves picking, `H` hides the kit completely (for
- * screenshots) and shows it again.
+ * Keys: `P` picking, `Esc` closes the note box and then leaves picking, `H`
+ * hides the kit completely (for screenshots) and shows it again.
  *
  * API for an agent driving a browser: window.draftKit.snapshot(), .audit(),
  * .hide(true|false). Picking and marking have no API on purpose: they are the
@@ -54,7 +61,7 @@
   const CONFIG = window.DRAFT_KIT || {};
   const SELF = document.currentScript ? document.currentScript.src : '';
   const POST_URL = CONFIG.post === undefined ? '/__select' : CONFIG.post;
-  const GUTTER = CONFIG.gutter === undefined ? 336 : CONFIG.gutter;
+  const GUTTER = CONFIG.gutter || 0;
   const WATCH = CONFIG.watch !== false;
   // Utility classes say how something is laid out, not what it is. The default
   // covers Tailwind-style names; a draft with other conventions passes its own.
@@ -555,8 +562,8 @@
   let current = null, layers = [], layerPoint = null, warn = '', notice = '', lastAudit = null;
   let marks = [];      // [{note, target, el}] — el re-resolved from target after a reload
 
-  // The width the reviewer saw. A vertical scrollbar and the open panel's
-  // gutter both narrow the page; `content` is what the layout actually got.
+  // The width the reviewer saw. A vertical scrollbar and a configured gutter
+  // both narrow the page; `content` is what the layout actually got.
   // To see it again without the panel: hide the kit and size the window to
   // content + scrollbar.
   function viewport(){
@@ -627,15 +634,34 @@
   }
 
   // ---------------------------------------------------------------- panel ---
+  // The kit floats over the page and never pushes it: the layout the reviewer
+  // judges is the one the page gets at this window width. A small toolbar is
+  // all that shows by default; the note box opens next to the picked element,
+  // and the full panel (selection, marks, levers, audit) opens on demand.
   const css = `
   :host{all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483600}
   *{box-sizing:border-box}
-  .dk{position:fixed;right:12px;bottom:12px;width:300px;max-height:calc(100vh - 24px);overflow:auto;
-    background:rgb(255 255 255/.97);border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;
-    font:11.5px/1.5 ui-sans-serif,system-ui,sans-serif;color:#18181b;box-shadow:0 10px 30px rgb(0 0 0/.12)}
-  .dk.left{right:auto;left:12px}
-  .dk.min{width:auto}
-  .dk.min .body{display:none}
+  .dock,.compose{font:11.5px/1.5 ui-sans-serif,system-ui,sans-serif;color:#18181b}
+  .dock{position:fixed;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .dock.r{right:12px}
+  .dock.l{left:12px;align-items:flex-start}
+  .dock.b{bottom:12px}
+  .dock.t{top:12px;flex-direction:column-reverse}
+  .card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;
+    box-shadow:0 10px 30px rgb(0 0 0/.12)}
+  .dk{width:300px;max-height:calc(100vh - 84px);overflow:auto;padding:12px 14px}
+  .bar{display:flex;align-items:center;gap:4px;padding:4px;border-radius:10px}
+  .bar .grip{cursor:grab;border:0;background:none;color:#a1a1aa;padding:2px 3px;touch-action:none}
+  .dragging .grip{cursor:grabbing}
+  .bar .alert{border-color:#f59e0b;color:#b45309;font-weight:700}
+  .menu{padding:8px;width:240px;max-height:calc(100vh - 84px);overflow:auto}
+  .notice{margin:0;padding:6px 10px;font-size:10.5px;color:#1d4ed8;max-width:300px}
+  .notice button{margin-left:6px}
+  .compose{position:fixed;width:280px;padding:8px 10px}
+  .compose .what{font:10.5px/1.4 ui-monospace,Menlo,monospace;color:#3f3f46;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .compose .ct{font-size:10.5px;color:#71717a;margin:1px 0 6px}
+  .compose .ct.fail{color:#b91c1c}
   header{display:flex;justify-content:space-between;align-items:center;gap:6px;
     font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#a1a1aa;font-weight:600}
   h4{margin:14px 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#a1a1aa;font-weight:600}
@@ -644,8 +670,6 @@
   button:hover{background:#eff4ff;border-color:#bcd2ff}
   button:disabled{opacity:.45;cursor:default}
   button.on{background:#18181b;color:#fff;border-color:#18181b}
-  .mode{width:100%;margin:10px 0 8px;padding:5px 8px;font-size:11px;border-color:#18181b;
-    display:flex;justify-content:space-between}
   .row{margin:0 0 7px -4px;padding:2px 4px;border-radius:6px}
   .row.lever{background:#eff4ff;box-shadow:inset 0 0 0 1px #bcd2ff}
   .row label{display:flex;justify-content:space-between;color:#71717a;font-size:10.5px}
@@ -674,11 +698,10 @@
   li .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   li.stale .t{color:#b45309;text-decoration:line-through}
   li .x{flex:none;border:0;background:none;color:#a1a1aa;padding:0 4px}
+  .empty{color:#a1a1aa;font-size:10.5px;margin:4px 0 0}
   .audit{margin-top:6px;font-size:10.5px;color:#3f3f46}
   .hd{display:flex;gap:4px;text-transform:none;letter-spacing:0}
   .warn{font-size:10.5px;color:#b45309;margin:8px 0 0}
-  .notice{font-size:10.5px;color:#1d4ed8;margin:8px 0 0}
-  .notice button{margin-left:6px}
   .box{position:fixed;pointer-events:none;border-radius:2px}
   .hover{border:1px solid #2563eb;background:rgb(37 99 235/.07)}
   .sel{outline:2px solid #2563eb;outline-offset:2px}
@@ -693,47 +716,71 @@
   const html = `
     <div class="box hover" hidden></div><div class="box sel" hidden></div><div class="tip" hidden></div>
     <div class="badges"></div>
-    <aside class="dk" aria-label="Draft kit">
-      <header><span>Draft kit</span><span class="hd">
-        <button type="button" class="side" title="move the panel to the other side">⇄</button>
-        <button type="button" class="toggle" title="collapse; H hides the kit completely">hide</button></span></header>
-      <div class="body">
-        <button type="button" class="mode" title="P toggles, Esc leaves"><span>pick element</span><b>off</b></button>
-        <div class="tokens"></div>
-        <div class="state-wrap"><h4>States</h4><div class="states"></div></div>
+    <form class="card compose" hidden>
+      <div class="what"></div><div class="ct"></div>
+      <div class="note">
+        <input type="text" placeholder="note — Enter marks it" aria-label="note for the selected element">
+        <button type="button" class="up" title="select the parent element">↑</button>
+        <button type="submit">mark</button>
+      </div>
+    </form>
+    <div class="dock" role="toolbar" aria-label="Draft kit">
+      <aside class="card dk" hidden aria-label="Draft kit panel">
+        <header><span>Draft kit</span><span class="hd">
+          <button type="button" class="side" title="move to the other side">⇄</button>
+          <button type="button" class="close" title="close the panel">×</button></span></header>
         <h4>Selected element</h4>
         <pre class="readout"></pre>
         <div class="layers"></div>
         <div class="acts">
           <button type="button" class="parent">parent</button>
-          <button type="button" class="reset">reset tokens</button>
+          <button type="button" class="reset">reset levers</button>
         </div>
         <h4>Marks</h4>
-        <form class="note">
-          <input type="text" placeholder="note for the selected element" aria-label="note">
-          <button type="submit">mark</button>
-        </form>
         <ol class="marks"></ol>
+        <p class="empty marks-empty">Pick an element and type a note next to it.</p>
         <div class="acts"><button type="button" class="clear">clear marks</button>
           <button type="button" class="run-audit">audit this state</button></div>
         <div class="audit" hidden></div>
+        <div class="tok-wrap"><h4>Levers</h4><div class="tokens"></div></div>
+        <p class="warn" hidden></p>
+      </aside>
+      <div class="card menu" hidden><div class="states"></div></div>
+      <p class="card notice" hidden><span></span><button type="button">reload</button></p>
+      <div class="card bar">
+        <button type="button" class="grip" title="drag to another corner" aria-label="move the toolbar">⠿</button>
+        <button type="button" class="mode" title="P toggles, Esc leaves">pick</button>
+        <button type="button" class="count" title="open the panel">0 marks</button>
+        <button type="button" class="st" title="states the page cannot reach by itself">states ▾</button>
+        <button type="button" class="alert" hidden>!</button>
+        <button type="button" class="open" title="selection, marks, levers, audit">panel</button>
       </div>
-      <p class="warn" hidden></p>
-      <p class="notice" hidden><span></span><button type="button">reload</button></p>
-    </aside>`;
+    </div>`;
 
-  let ui = null, open = true, picking = false, hidden = false;
-  const SIDE_KEY = 'draft-kit:side';
-  let side = (() => { try { return sessionStorage.getItem(SIDE_KEY); } catch { return null; } })() ||
-    (CONFIG.side === 'left' ? 'left' : 'right');
-  const gutterOn = () => !hidden && open && GUTTER && innerWidth >= 1180;
-  // `H` or draftKit.hide(true): nothing of the kit is drawn — no panel, no
+  let ui = null, picking = false, hidden = false, composing = false, menuOpen = false;
+  // Where the toolbar sits and whether the panel is open survive the live
+  // reload that follows a patch, so the reviewer finds the kit where they left it.
+  const UI_KEY = 'draft-kit:ui';
+  const saved = (() => { try { return JSON.parse(sessionStorage.getItem(UI_KEY)) || {}; } catch { return {}; } })();
+  let side = saved.side || (CONFIG.side === 'left' ? 'left' : 'right');
+  let edge = saved.edge === 'top' ? 'top' : 'bottom';
+  let open = !!saved.open;
+  const saveUi = () => { try { sessionStorage.setItem(UI_KEY, JSON.stringify({side, edge, open})); } catch {} };
+  const gutterOn = () => !hidden && open && GUTTER > 0 && innerWidth >= 1180;
+  // `H` or draftKit.hide(true): nothing of the kit is drawn — no toolbar, no
   // badges, no outline, no gutter — so a screenshot shows the page alone.
   function setHidden(on){
     hidden = !!on;
     if (hidden && picking) setPicking(false);
     if (host) host.style.display = hidden ? 'none' : '';
     render();
+  }
+  function setOpen(on){
+    open = on;
+    if (on) menuOpen = false;
+    saveUi();
+    render();
+    schedulePost(400);
   }
   const pageStyle = document.createElement('style');   // the only rules the kit puts in the page
 
@@ -743,10 +790,12 @@
     shadow.innerHTML = `<style>${css}</style>${html}`;
     const $ = s => shadow.querySelector(s);
     ui = {
-      panel: $('.dk'), toggle: $('.toggle'), mode: $('.mode'), tokens: $('.tokens'),
-      stateWrap: $('.state-wrap'), states: $('.states'), readout: $('.readout'), layers: $('.layers'),
+      dock: $('.dock'), panel: $('.dk'), menu: $('.menu'), bar: $('.bar'), mode: $('.mode'), count: $('.count'),
+      st: $('.st'), alert: $('.alert'), openBtn: $('.open'), tokWrap: $('.tok-wrap'), tokens: $('.tokens'),
+      states: $('.menu .states'), readout: $('.readout'), layers: $('.layers'),
       warn: $('.warn'), notice: $('.notice'), hover: $('.hover'), sel: $('.sel'), tip: $('.tip'),
-      badges: $('.badges'), note: $('.note input'), markBtn: $('.note button'), marks: $('.marks'),
+      badges: $('.badges'), compose: $('.compose'), what: $('.compose .what'), ct: $('.compose .ct'),
+      note: $('.compose input'), marks: $('.marks'), marksEmpty: $('.marks-empty'),
       clear: $('.clear'), audit: $('.audit'),
       rows: [], stateButtons: [],
     };
@@ -763,13 +812,19 @@
       ui.tokens.appendChild(row);
       ui.rows.push({t, row, input, out: row.querySelector('b')});
     }
-    ui.stateWrap.hidden = !STATES.length;
+    ui.tokWrap.hidden = !TOKENS.length;
+    ui.st.hidden = !STATES.length;
     for (const s of STATES) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = s.label || s.id;
       b.addEventListener('click', () => {
-        try { s.run(); } catch (err) { setWarn(`state "${s.id}" failed: ${err.message}`); }
+        const was = isOn(s);
+        try { (was && s.off ? s.off : s.run).call(s); }
+        catch (err) { setWarn(`state "${s.id}" failed: ${err.message}`); }
+        // A one-way run() leaves the reviewer stuck in the state; say so
+        // instead of a button that silently does nothing.
+        if (was && isOn(s)) setWarn(`state "${s.id}" stays on: give it an off() or make run() toggle`);
         refresh();
         schedulePost(0);
       });
@@ -777,25 +832,51 @@
       ui.stateButtons.push({s, b});
     }
 
-    ui.toggle.addEventListener('click', () => { open = !open; render(); });
-    // A fixed drawer or an absolutely placed header button can sit exactly
-    // where the panel is; the gutter only moves the page's flow, not those.
-    $('.side').addEventListener('click', () => {
-      side = side === 'right' ? 'left' : 'right';
-      try { sessionStorage.setItem(SIDE_KEY, side); } catch {}
-      render();
-      schedulePost(400);
-    });
     ui.mode.addEventListener('click', () => setPicking(!picking));
-    $('.parent').addEventListener('click', () => {
-      const up = current && current.parentElement;
-      if (up && up !== document.body && up !== root) select(up, layers.includes(up) ? layers : [up, ...layers], layerPoint);
+    ui.count.addEventListener('click', () => setOpen(true));
+    ui.openBtn.addEventListener('click', () => setOpen(!open));
+    ui.alert.addEventListener('click', () => setOpen(true));
+    $('.close').addEventListener('click', () => setOpen(false));
+    ui.st.addEventListener('click', () => { menuOpen = !menuOpen; if (menuOpen) open = false; saveUi(); render(); });
+    // A fixed drawer or a header button can sit exactly where the kit is.
+    $('.side').addEventListener('click', () => { side = side === 'right' ? 'left' : 'right'; saveUi(); render(); });
+    const grip = $('.grip');
+    grip.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      grip.setPointerCapture(e.pointerId);
+      const x0 = e.clientX, y0 = e.clientY;
+      ui.dock.classList.add('dragging');
+      const move = ev => { ui.dock.style.transform = `translate(${ev.clientX - x0}px,${ev.clientY - y0}px)`; };
+      const drop = ev => {
+        grip.removeEventListener('pointermove', move);
+        grip.removeEventListener('pointerup', drop);
+        grip.removeEventListener('pointercancel', drop);
+        ui.dock.style.transform = '';
+        ui.dock.classList.remove('dragging');
+        // snap to the nearest corner: a free position would end up over the
+        // page's own corner controls after the next resize
+        side = ev.clientX < innerWidth / 2 ? 'left' : 'right';
+        edge = ev.clientY < innerHeight / 2 ? 'top' : 'bottom';
+        saveUi();
+        render();
+      };
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', drop);
+      grip.addEventListener('pointercancel', drop);
     });
+    const up = () => {
+      const p = current && current.parentElement;
+      if (p && p !== document.body && p !== root) select(p, layers.includes(p) ? layers : [p, ...layers], layerPoint);
+    };
+    $('.parent').addEventListener('click', up);
+    $('.up').addEventListener('click', up);
     $('.reset').addEventListener('click', resetTokens);
-    $('.note').addEventListener('submit', e => {
+    ui.compose.addEventListener('submit', e => {
       e.preventDefault();
       addMark(ui.note.value);
       ui.note.value = '';
+      composing = false;
+      render();
     });
     ui.clear.addEventListener('click', () => { marks = []; store.save(); renderMarks(); schedulePost(0); });
     $('.run-audit').addEventListener('click', () => {
@@ -806,14 +887,14 @@
         `rings ${n(a.rings)} · gradients ${a.gradients.length} · animated ${a.animated.length} · ` +
         `contrast fails ${a.contrastFailures.length}` +
         (a.contrastUnknown.length ? ` · unknown ${a.contrastUnknown.length}` : '') +
-        (a.contrastApproximate.length ? ` · approximate ${a.contrastApproximate.length}` : '');
+        (a.contrastApproximate.length ? ` · approximate ${a.contrastApproximate.length}` : '') +
+        (a.transitions ? ` · ${a.transitions} transitions running: run it again` : '');
       ui.audit.hidden = false;
       schedulePost(0);
     });
     ui.notice.querySelector('button').addEventListener('click', () => location.reload());
 
-    // While open, the panel reserves a gutter on its side so it does not cover
-    // the page's flow. Collapsing removes the gutter; `H` removes everything.
+    // Only when the config asks for a gutter does the open panel push the page.
     pageStyle.id = 'draft-kit-page';
     document.head.appendChild(pageStyle);
     document.body.appendChild(host);
@@ -832,34 +913,38 @@
     return r;
   }
 
+  const contrastText = c => !c ? '(no text of its own)'
+    : c.ratio === null ? `unknown — ${c.reason}`
+    : `${c.ratio}:1 on ${c.against} — ${c.passes ? 'meets' : 'FAILS'} ${c.required}:1` +
+      (c.gradient ? ` (gradient, ${c.range[0]}–${c.range[1]}:1 across its stops)` : '') +
+      (c.method === 'ancestors' ? ' (approximate: text not on screen)' : '');
   const readoutOf = d => {
     if (!d) return 'Turn picking on and click anything.';
-    const c = d.contrast;
-    const contrast = !c ? '(no text of its own)'
-      : c.ratio === null ? `unknown — ${c.reason}`
-      : `${c.ratio}:1 on ${c.against} — ${c.passes ? 'meets' : 'FAILS'} ${c.required}:1` +
-        (c.gradient ? ` (gradient, ${c.range[0]}–${c.range[1]}:1 across its stops)` : '') +
-        (c.method === 'ancestors' ? ' (approximate: text not on screen)' : '');
     return `target:    ${compact(d.target)}\n` +
       `component: ${d.component || '(no data-node above)'}\n` +
       `text:      ${d.text ? '"' + d.text.slice(0, 60) + '"' : '(empty)'}\n` +
       `computed:  ${d.computed['font-size']} · ${d.computed.color} · pad ${d.computed.padding} · r ${d.computed['border-radius']}\n` +
-      `contrast:  ${contrast}`;
+      `contrast:  ${contrastText(d.contrast)}`;
   };
 
   function render(){
     if (!ui) return;
-    ui.panel.classList.toggle('min', !open);
-    ui.panel.classList.toggle('left', side === 'left');
-    ui.toggle.textContent = open ? 'hide' : 'show';
+    ui.dock.className = `dock ${side === 'left' ? 'l' : 'r'} ${edge === 'top' ? 't' : 'b'}`;
+    ui.panel.hidden = !open;
+    ui.menu.hidden = !menuOpen;
+    ui.openBtn.classList.toggle('on', open);
+    ui.st.classList.toggle('on', menuOpen);
     pageStyle.textContent =
-      (!hidden && open && GUTTER ? `@media (min-width:1180px){html body{padding-${side}:${GUTTER}px}}\n` : '') +
+      (gutterOn() ? `@media (min-width:1180px){html body{padding-${side}:${GUTTER}px}}\n` : '') +
       (picking && !hidden ? 'html,html *{cursor:crosshair!important}' : '');
     ui.mode.classList.toggle('on', picking);
-    ui.mode.querySelector('b').textContent = picking ? 'on' : 'off';
+    ui.mode.textContent = picking ? 'picking' : 'pick';
+    ui.count.textContent = `${marks.length} mark${marks.length === 1 ? '' : 's'}`;
+    ui.alert.hidden = !warn;
+    ui.alert.title = warn;
 
     const d = describe(current);
-    if (current && !d) { current = null; layers = []; renderLayers(); }
+    if (current && !d) { current = null; layers = []; composing = false; renderLayers(); }
     const levers = d ? d.levers : [];
     for (const {t, row, input, out} of ui.rows) {
       input.min = t.min; input.max = t.max;
@@ -872,8 +957,13 @@
     for (const {s, b} of ui.stateButtons) b.classList.toggle('on', isOn(s));
 
     ui.readout.textContent = readoutOf(d);
-    ui.note.disabled = ui.markBtn.disabled = !d;
+    if (d) {
+      ui.what.textContent = `${labelOf(current)}  ·  ${d.component || 'no data-node above'}`;
+      ui.ct.textContent = d.contrast ? 'contrast ' + contrastText(d.contrast) : 'no text of its own';
+      ui.ct.classList.toggle('fail', !!(d.contrast && d.contrast.ratio !== null && !d.contrast.passes));
+    }
     ui.clear.disabled = !marks.length;
+    ui.marksEmpty.hidden = !!marks.length;
     ui.warn.hidden = !warn;
     ui.warn.textContent = warn;
     ui.notice.hidden = !notice;
@@ -927,18 +1017,30 @@
     render();
   }
 
-  // The outline is a picking-mode mark; outside the mode only the readout
-  // stays. Mark badges show whenever the panel is open.
+  const overlaps = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+
+  // The outline and the note box belong to picking mode; outside it only the
+  // panel's readout stays. Mark badges show whenever the kit is shown.
   function placeOverlays(){
     if (!ui) return;
-    place(ui.sel, picking ? current : null);
+    const r = place(ui.sel, picking ? current : null);
+    ui.compose.hidden = !(composing && r);
+    if (r) {
+      // below the element, else above it, else inside the viewport's top edge
+      const h = ui.compose.offsetHeight, w = ui.compose.offsetWidth;
+      let top = r.bottom + 10;
+      if (top + h > innerHeight - 8) top = r.top - h - 10;
+      if (top < 8) top = Math.min(innerHeight - h - 8, Math.max(8, r.top + 8));
+      ui.compose.style.top = top + 'px';
+      ui.compose.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    }
     [...ui.badges.children].forEach((badge, i) => {
-      const el = open && marks[i] ? resolve(marks[i]) : null;
-      const r = el && el.getBoundingClientRect();
+      const el = marks[i] ? resolve(marks[i]) : null;
+      const b = el && el.getBoundingClientRect();
       // a badge for an element scrolled out of view would pin itself to an edge
-      if (!r || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) { badge.hidden = true; return; }
-      badge.style.left = Math.max(2, r.left - 9) + 'px';
-      badge.style.top = Math.max(2, r.top - 9) + 'px';
+      if (!b || b.bottom < 0 || b.top > innerHeight || b.right < 0 || b.left > innerWidth) { badge.hidden = true; return; }
+      badge.style.left = Math.max(2, b.left - 9) + 'px';
+      badge.style.top = Math.max(2, b.top - 9) + 'px';
       badge.hidden = false;
     });
   }
@@ -954,17 +1056,24 @@
   // --------------------------------------------------------------- picking ---
   function setPicking(on){
     picking = on;
-    if (!on) { ui.hover.hidden = true; ui.tip.hidden = true; }
+    if (!on) { ui.hover.hidden = true; ui.tip.hidden = true; composing = false; }
     // leaving the mode keeps the selection and its readout: the reviewer keeps
     // talking about what they just pointed at
     render();
   }
-  function select(el, stack, point){
+  function select(el, stack, point, compose){
     current = el;
     layers = stack && stack.length ? stack : [el];
     layerPoint = point;
+    if (compose) composing = true;
     renderLayers();
     render();
+    // The open panel or menu must not hide what was just picked.
+    if ((open || menuOpen) && overlaps(el.getBoundingClientRect(), ui.dock.getBoundingClientRect())) {
+      side = side === 'right' ? 'left' : 'right';
+      render();
+    }
+    if (composing) ui.note.focus({preventScroll: true});
     schedulePost(0);
   }
 
@@ -978,7 +1087,7 @@
       e.stopImmediatePropagation();
       if (type !== 'click') return;
       const {stack, el} = hit(e.clientX, e.clientY);
-      if (el) select(el, stack, {x: e.clientX, y: e.clientY});
+      if (el) select(el, stack, {x: e.clientX, y: e.clientY}, true);
     }, true);
   }
 
@@ -1000,7 +1109,12 @@
 
   window.addEventListener('keydown', e => {
     if (!ui) return;
-    if (e.key === 'Escape' && picking) { e.stopImmediatePropagation(); setPicking(false); return; }
+    // Esc closes the note box first, then leaves picking.
+    if (e.key === 'Escape' && (composing || picking)) {
+      e.stopImmediatePropagation();
+      if (composing) { composing = false; ui.note.blur(); render(); } else setPicking(false);
+      return;
+    }
     const t = e.composedPath()[0];
     const typing = t && t.nodeType === 1 && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if (typing || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;

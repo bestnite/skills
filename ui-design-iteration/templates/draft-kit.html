@@ -153,7 +153,9 @@
     ],
     // States the page cannot reach on its own. run() flips what the draft
     // already contains (a theme class, an empty-state attribute); it never
-    // implements behaviour the port would need.
+    // implements behaviour the port would need. A run() that only sets a
+    // state (view('empty')) needs an off() that leaves it (view('default')),
+    // or the reviewer cannot get out of it.
     states: [
       {id:'dark', label:'dark theme',
        run(){ document.documentElement.classList.toggle('dark'); },
