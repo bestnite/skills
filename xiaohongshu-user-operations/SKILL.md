@@ -1,24 +1,29 @@
 ---
 name: xiaohongshu-user-operations
-description: "Use when reading Xiaohongshu (小红书) as a logged-in user: profile, notes, search, comments, notifications."
+description: "Use when reading Xiaohongshu (小红书) as a user or authorizing QR login: profile, notes, search, comments, notifications."
 ---
 
-# Xiaohongshu User Operations (Read-Only)
+# Xiaohongshu User Operations
 
-Read Xiaohongshu (小红书) through the HTTP client the site already has loaded in
-an authenticated browser page: confirm the account, read profiles, list
-published/collected/liked notes, open a note, search, read comments and replies,
-and read notification lists.
+Read Xiaohongshu (小红书) through the HTTP client the site already has loaded:
+confirm the account, read profiles, list published/collected/liked notes, open a
+note, search, read comments and replies, and read notification lists. When the
+browser is not authenticated, an explicit QR login path is available; it is an
+authorized authentication state change, not a business operation.
 
 This is a knowledge skill. It ships no service, no runtime, and no host-side HTTP
-client; it documents what to call and which mechanics matter. The browser session
-is the user's: their browser tooling owns login and credentials, and this skill
-writes no cookie file.
+client; it documents what to call and which mechanics matter. The business reads
+require `guest: false`. Login and session handling are documented in
+`references/login-and-session.md`; the browser owns credentials, and the skill
+writes no cookie file unless the user explicitly authorizes a storage export.
 
 ## Scope
 
-- The documented calls are reads. Publishing, upload, login/reset, commenting,
+- The documented business calls are reads. Publishing, upload, reset, commenting,
   liking, collecting, replying, and notification writes are outside the scope.
+- QR login is an authentication exception: it is an explicit authorized state
+  change, not a business write. Ask before starting it when the user did not ask
+  to sign in.
 - A link or id the user gives in the task is a target. If the task names a note,
   profile, comment thread, or notification surface, that is the scope.
 - Pick a conservative page cap from the task (for example 3 pages or 60 items)
@@ -51,8 +56,16 @@ toolset whether you have one; do not scan the machine for browsers or profiles.
   initialization, not business scraping; it may require a search once in the
   browser. The skill does not synthesize a context.
 - Manual UI navigation is only for observing a request schema the references do
-  not cover.
-- A login wall or verification page is a stop; the skill does not handle login.
+  not cover. Authentication presentation (showing the site's own login QR) is an
+  explicit exception.
+- When the page is a guest and the user has authorized signing in, use the QR
+  recipe in `references/login-and-session.md`. If the user did not ask to sign in,
+  ask before starting; do not trigger login from a business read failure.
+- If the browser is already logged in, reuse that session. Do not switch accounts,
+  log out, clear storage, or replace the profile; a different account gets a new
+  dedicated context or profile.
+- A business refusal (`401`, `403`, `406`) or a captcha is not a credential
+  trigger: do not auto-switch to login, swap tokens, or retry.
 - A plain in-page `fetch` to the API host was refused once in the observed
   session (`406`, `{code: -1}`) while the site's own client succeeded. The
   refusal is not fully attributable to a single cause, so use the client and do
@@ -60,8 +73,10 @@ toolset whether you have one; do not scan the machine for browsers or profiles.
 
 ## Bootstrap the Client
 
-Run this in the authenticated page's main-world context, in one evaluate call.
-Isolated worlds may not see the site's webpack runtime.
+Run this in an initialized `www.xiaohongshu.com` page's main-world context, in one
+evaluate call; it works on both a guest and an authenticated context (guest
+bootstrap for QR login: `references/login-and-session.md`). Isolated worlds may
+not see the site's webpack runtime.
 
 1. Confirm `window.webpackChunkxhs_pc_web` is an array. If it is absent, the page
    is not initialized; reload a site page and stop if it persists.
@@ -81,7 +96,9 @@ Isolated worlds may not see the site's webpack runtime.
    take that export; it exposes `get` and `post`.
 5. Validate the candidate: both methods must be functions. If several distinct
    clients validate, stop as ambiguous; do not pick by position.
-6. Call `get('/api/sns/web/v2/user/me')` and require `guest === false`.
+6. For business reads, call `get('/api/sns/web/v2/user/me')` and require
+   `guest === false`. For QR login the same bootstrap works in a guest context;
+   do not gate login on `guest === false`.
 
 Do not hardcode module ids or function names from any build; they can move between
 releases. If the pattern is absent or invalid, report "bootstrap failed" for that
@@ -93,6 +110,42 @@ read (unread counts) and returns a small projection. Task logic for other reads 
 yours to write from `references/read-api.md`; the template is not a generic call
 runner. Variables live only in that evaluate call; navigation discards them, so
 re-bootstrap after every navigation.
+
+## Login (QR)
+
+Login is an explicit authorized state change, not a business write. Use it only
+when the user asked to sign in or after asking; never trigger it from a business
+refusal. If already logged in, reuse the session; a different account gets a new
+dedicated context or profile, not a logout.
+
+- **Create** — `client.post('/api/sns/web/v1/login/qrcode/create', { qr_type: 1 })`
+  on the default `edith` host. Observed HTTP 200 `success: true`. Check that
+  `qrId`, `code`, and `url` are strings. `url` is a QR payload, not an image;
+  never `img.src` it or `page.goto` it as if it displayed the code.
+- **Render** — pure interface first: render the payload with the environment's
+  existing local QR encoder. If the environment cannot render it, or the
+  completion path is not verified, the site's own login QR is an explicit
+  fallback, shown as authentication presentation only (not business scraping) and
+  matched to the same pair. If the site owns the QR, use only its poll owner; a
+  manual pair does not auto-complete on the site. Do not add an online QR service.
+- **Poll** — `client.post('/api/qrcode/userinfo', { qrId, code }, { transform: false, withCredentials: true })`
+  on the default `edith` host. The live call used camelCase `qrId`/`code`; preserve
+  those exact keys and do not assume an alias. `transform: false` was the tested
+  option; preserve it exactly and do not state its internal meaning as fact. The
+  result is `{ codeStatus, result }`: `0` waiting (live), `1` scanned, `2`
+  confirmed, `3` expired (live for a stale code); `1`/`2` are source-only.
+- **Confirm** — on `2`, do not declare success from the poll. Let the site's
+  official flow complete activation and region routing (that path is
+  source-only), then make a new identity request in the same context and require
+  `guest: false`.
+- **Budget** — poll no faster than every 2 seconds with a fixed client deadline
+  (for example 4 minutes; not a server TTL). Stop at the deadline; reissue only
+  with explicit permission, discarding the old pair. Keep one pending code per
+  invocation and associate state by `qrId`.
+- **Secrets** — never output `qrId`, `code`, `url`, or data URLs. Show a QR image
+  only to the authorized user and clean up the temporary artifact.
+
+Full flow, persistence, and revocation: `references/login-and-session.md`.
 
 ## Call Contract
 
@@ -154,7 +207,8 @@ Bootstrap and errors: `references/browser-session.md`.
 
 ## Stop Conditions
 
-- `guest: true` or a missing identity payload: the browser is not logged in.
+- `guest: true` or a missing identity payload: business reads stop. If the user
+  authorized login, use the QR recipe; otherwise ask.
 - Missing runtime or route module, or an ambiguous client: stop and report the
   build observation.
 - A refusal (`401`, `403`, `406`) or a challenge/captcha page: stop. Do not edit
@@ -192,7 +246,8 @@ as read-marking.
 ## Files
 
 `references/browser-session.md` (bootstrap, transport, errors, lifecycle);
-`references/read-api.md` (16 reads, fields, limits, TOC);
-`references/verification.md` (date, method, coverage, gaps, provenance);
+`references/read-api.md` (16 business reads, fields, limits, TOC);
+`references/login-and-session.md` (QR login, polling, cookie strategy, revocation);
+`references/verification.md` (date, method, coverage, gaps);
 `templates/browser-api-bootstrap.js` (page-context bootstrap + one default read,
 not a CLI); `evals/evals.json` (offline checks, no cookies).

@@ -14,6 +14,10 @@ client.post(path, body, options);
 The resolved value is the business `data` object, camelCased by the site's
 transform. Raw wire payloads are snake_case.
 
+These 16 endpoints are the business reads and require `guest: false`. QR login is
+not another read: its endpoints and state machine are in
+`login-and-session.md`.
+
 ## Contents
 
 - [Conventions](#conventions)
@@ -535,7 +539,9 @@ page cap.
 - A minimal home-feed body for a fresh context.
 - Exact enum completeness for search filters.
 - Notification read-marking and `POST /api/sns/web/v1/message/read`.
-- All writes: publish, upload, login/reset, comment, like, collect, reply.
+- All business writes: publish, upload, comment, like, collect, reply. QR login
+  and session persistence are separate; see `login-and-session.md` and
+  `verification.md`.
 - Long-run rate limits and account-risk behavior; no safe threshold is claimed.
 - Build durability: module ids, wrapper names, and the registration pattern are
   build artifacts; the source-string scan is a method, not a promise.

@@ -12,6 +12,9 @@ presenting any endpoint as "supported" or any field as guaranteed.
   host-side HTTP client was used for the endpoint checks.
 - Authentication: a user-authorized browser session; credentials were handled by
   the user's browser tooling. This work wrote no cookie file.
+- Login checks used an isolated, unauthenticated browser context (`1440` viewport)
+  opened on `www.xiaohongshu.com`. The original authenticated context was left
+  untouched and the isolated context was closed afterwards.
 - Raw responses were not saved. No real user ids, note ids, comment ids,
   `xsec_token` values, request context ids, personal URLs, or cookies are part of
   this skill.
@@ -38,6 +41,11 @@ does not mean every field, every page, or every permission state was exhausted.
 The availability of a client wrapper for an endpoint was used only as evidence
 that the underlying client call contract is reachable. The skill does not depend
 on wrapper exports or their names; it calls the client paths directly.
+
+The QR login checks reused the same bootstrap in the isolated guest context: the
+create and poll calls went through the same source-selected client, with no
+hardcoded module id, export, or wrapper name, and without a `guest === false`
+precondition.
 
 ## Endpoint coverage
 
@@ -98,6 +106,36 @@ on wrapper exports or their names; it calls the client paths directly.
   counts may be numbers. The template accepts a finite number or a decimal string
   for the four unread counts and rejects anything else.
 
+## Login and QR evidence
+
+- **Guest identity is a normal state.** In the isolated context, the identity
+  endpoint answered HTTP 200 with `code: -101, success: false`, or later 200 with
+  `success: true, guest: true`. That is missing authentication, not a business
+  refusal.
+- **Create was live.** `client.post('/api/sns/web/v1/login/qrcode/create',
+  { qr_type: 1 })` on the default `edith` host returned HTTP 200 with
+  `success: true`; the payload carried `qr_id`, `code`, `url`, and `multi_flag`
+  (client: `qrId`, `code`, `url`, `multiFlag`).
+- **Pending poll was live.** `client.post('/api/qrcode/userinfo', { qrId, code },
+  { transform: false, withCredentials: true })` returned `codeStatus: 0` while
+  waiting.
+- **Expiry was live for a stale code.** `codeStatus: 3` was observed for an older
+  page code that was still polling in the background while a new manual code
+  existed. Poll results must be associated with their own `qrId`.
+- **Scanned and confirmed are source-only.** `codeStatus: 1` and `codeStatus: 2`
+  were read from loaded client source; no real human scan was performed.
+- **Geo and completion are source-only.** The `geoZone` branch, the site
+  geography routing, and the completion `GET /api/sns/web/v1/login/qrcode/status`
+  with an `x-login-mode` header were read from source, not exercised over the
+  network.
+- **The close of the loop was not verified.** No post-confirmation identity call
+  returning `guest: false`, no final cookie/session creation, and no persistence
+  across sessions were tested. The skill must re-check identity in the same
+  context before claiming a login.
+- **Session persistence and restore were not tested.** The dedicated persistent
+  profile and the optional storageState export/restore are documented strategy,
+  not measured outcomes.
+
 ## What remains unverified
 
 These are explicit gaps, not hidden assumptions:
@@ -122,21 +160,16 @@ These are explicit gaps, not hidden assumptions:
 - Notification read-marking and the `POST /api/sns/web/v1/message/read` write.
   That write was observed in client source only, with no network call in this
   session. It is unverified and outside scope.
-- All write operations: publish, upload, login/reset, comment, like, collect,
-  reply, and notification reply.
+- All business writes: publish, upload, comment, like, collect, reply, and
+  notification reply. (QR login is separated above; reset is not covered.)
+- A real human QR scan, the confirmed-to-authenticated transition, geo/activation
+  completion, SMS or captcha handoff, and any final cookie creation.
+- Persistent-profile survival across sessions and a storageState restore.
 - Long-run rate limits and account-risk behavior. Only bounded, low-frequency
   reads were exercised; no safe threshold is claimed.
 - Build durability. Module ids, wrapper names, and the registration pattern are
   build artifacts. The documented source-string scan is a method, not a promise
   that a future build keeps the same internals.
-
-## Reference project note
-
-The public project `xpzouying/xiaohongshu-mcp` at commit
-`7797fd375aba02dcd33afe143f6bee13e5870859` was consulted as context only. Its Go
-implementation reads page state/DOM and does **not** provide the HTTP calls,
-client bootstrap, or endpoint contracts documented here. Do not cite it as the
-source of the API behavior, and do not make this skill depend on it at runtime.
 
 ## How to re-check safely
 
@@ -154,8 +187,8 @@ If a future session needs to confirm that the surface still works:
 
 ## Documentation checks
 
-The endpoint facts above were supplied from the verified browser session. The
-skill's own repository work was documentation-only: Markdown links, line counts,
-secret/absolute-path scans, and JavaScript syntax checks. No live Xiaohongshu
-request was made while writing this skill; the verification date refers to the
-browser-session observations, not to a replay during packaging.
+The endpoint facts above were observed in the independent browser session
+described here. The original read facts were not replayed during packaging. The
+QR research for this update was independently observed before the documentation
+was written. The final static checks themselves (Markdown links, JavaScript syntax,
+secret/absolute-path scans) made no network request.

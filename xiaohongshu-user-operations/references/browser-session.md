@@ -1,7 +1,9 @@
 # Browser Session, Bootstrap, and Transport
 
-How to reach Xiaohongshu's read API from a browser that is already logged in, and
-how to fail without damaging the session. Verified on 2026-10-21 UTC. API
+How to reach Xiaohongshu's read API from a browser, and how to fail without
+damaging the session. The same bootstrap works on a guest page; business reads
+still require `guest: false`, while QR login is an explicit authorized state
+change described in `login-and-session.md`. Verified on 2026-10-21 UTC. API
 catalog: `read-api.md`. Field coverage and gaps: `verification.md`.
 
 ## Contents
@@ -12,6 +14,7 @@ catalog: `read-api.md`. Field coverage and gaps: `verification.md`.
 - [Selecting the client without hardcoded ids](#selecting-the-client-without-hardcoded-ids)
 - [Client call semantics](#client-call-semantics)
 - [Search host exception](#search-host-exception)
+- [Guest bootstrap and QR login](#guest-bootstrap-and-qr-login)
 - [Error model](#error-model)
 - [Timeouts](#timeouts)
 - [Page lifecycle](#page-lifecycle)
@@ -24,8 +27,11 @@ catalog: `read-api.md`. Field coverage and gaps: `verification.md`.
 - A browser tool you can drive: navigate to a URL and evaluate JavaScript in the
   page. Decide from your own toolset whether you have one; do not probe the
   machine, look for browser binaries, or inspect profile directories.
-- A tab on `https://www.xiaohongshu.com` in a user-authorized session. Login and
-  credential handling are the user's browser tooling's responsibility.
+- A tab on `https://www.xiaohongshu.com` in a user-authorized session. The
+  bootstrap also runs on a guest page; business reads then stop at the identity
+  gate, and QR login (`login-and-session.md`) is available only when the user
+  authorized signing in. Credential handling is the user's browser tooling's
+  responsibility.
 - Main-world evaluation. The webpack runtime and the client live on the page's
   main world. An isolated content-script world can see the DOM but may not see
   `window.webpackChunkxhs_pc_web`; if it is absent while the page renders
@@ -186,6 +192,22 @@ have to be the search results page. The request still needs a valid search
 context (`search_id`, `session_id`) obtained from the user's normal search
 surface; those values are context, not something to invent. All other documented
 reads use the default `edith` host.
+
+## Guest bootstrap and QR login
+
+The webpack capture and registration selection are identical on a guest page; the
+route modules are the same and no module id, export name, or wrapper name is
+hardcoded. A guest does not need `guest === false` to bootstrap.
+
+- The guest identity endpoint may answer HTTP 200 with `code: -101,
+  success: false`, or later 200 with `success: true, guest: true`. That is the
+  normal missing-auth state, not a business refusal and not a reason to retry the
+  identity call differently.
+- Business reads stop at the identity gate. QR login is a separate, explicit
+  authorization flow; it is not triggered by a business `401`/`403`/`406` and it
+  does not change the rule against retrying those.
+- QR create, polling, rendering, persistence, and revocation:
+  `login-and-session.md`.
 
 ## Error model
 
