@@ -9,6 +9,7 @@ A collection of agent skills for the [open agent skills ecosystem](https://www.n
 - **[quadlet-creator](./quadlet-creator/)** — Convert `docker run` commands, Docker Compose setups, or self-hosting deployment assets into reviewable Podman Quadlet output; includes rootless runtime identity (UserNS/UID) troubleshooting.
 - **[video-edit-planner](./video-edit-planner/)** — Plan video edits through iterative dialogue: transcribe audio (FunASR), extract emotion/event labels and key frames, analyze visuals, and produce structured cut/transition/assembly plans.
 - **[discord-user-operations](./discord-user-operations/)** — Operate Discord as a regular user account: read, search, and post.
+- **[xiaohongshu-user-operations](./xiaohongshu-user-operations/)** — Read Xiaohongshu (小红书) as a logged-in user through the site's own in-page HTTP client: identity, profiles, notes, collections, likes, search, comments, notifications — read-only, with scope and secret hygiene.
 - **[china-weather-query](./china-weather-query/)** — China weather from CMA official data: observation, forecast, warnings, AQI.
 - **[chinese-humanizer](./chinese-humanizer/)** — Strip the AI flavor out of Simplified Chinese prose: stock phrases, nominalization, translationese sentence structure, template rhythm; keeps facts, terminology, and the author's voice.
 - **[xianyu-operations](./xianyu-operations/)** — Xianyu (闲鱼 / Goofish) operations: keyword search, item detail, own listings, IM sessions — plus publishing, taking listings down and sending messages, each write approved by the user. mtop JSON API over plain HTTP, with a browser path only for search.
@@ -46,6 +47,7 @@ Each top-level directory is one self-contained skill (`SKILL.md` plus optional s
 china-weather-query/      # SKILL.md + references/ + scripts/ + tests/ + README
 chinese-humanizer/        # SKILL.md + references/ + README
 discord-user-operations/  # SKILL.md + references/ + README
+xiaohongshu-user-operations/  # SKILL.md + references/ + templates/ + evals/ + README
 xianyu-operations/        # SKILL.md + references/ + templates/ + README
 quadlet-creator/          # SKILL.md + references/ + templates/ + README
 video-edit-planner/       # SKILL.md + references/ + scripts/ + README

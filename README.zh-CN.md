@@ -9,6 +9,7 @@
 - **[quadlet-creator](./quadlet-creator/)** — 把 `docker run` 命令、Docker Compose 配置或自托管部署文件转换成可审阅的 Podman Quadlet 输出；含 rootless 运行时身份（UserNS/UID）排障。
 - **[video-edit-planner](./video-edit-planner/)** — 通过迭代式对话规划视频剪辑：转录音频（FunASR）、提取情感/事件标签与关键帧、分析画面，产出结构化的剪辑/转场/拼接方案。
 - **[discord-user-operations](./discord-user-operations/)** — 以普通用户身份操作 Discord：读取、搜索、发帖。
+- **[xiaohongshu-user-operations](./xiaohongshu-user-operations/)** — 以已登录用户身份，通过站点自身的页面内 HTTP 客户端读取小红书：身份、主页、笔记、收藏、点赞、搜索、评论、通知——只读，并说明范围授权与凭证保护。
 - **[china-weather-query](./china-weather-query/)** — 用中国气象局官方数据查国内天气：实况、预报、预警、空气质量。
 - **[chinese-humanizer](./chinese-humanizer/)** — 中文表述拟人化：去掉简体中文里的公文腔、名词化、翻译腔与模板节奏，保留事实、术语与作者声口。
 - **[xianyu-operations](./xianyu-operations/)** — 闲鱼（Goofish）操作：关键词搜索、商品详情、自己的商品列表、消息会话，以及发布/下架商品与发消息（写操作需用户逐次同意）。mtop JSON 接口走纯 HTTP，只有搜索需要浏览器。
@@ -44,6 +45,7 @@ npx skills add https://git.nite07.com/nite/skills.git --list
 china-weather-query/      # SKILL.md + references/ + scripts/ + tests/ + README
 chinese-humanizer/        # SKILL.md + references/ + README
 discord-user-operations/  # SKILL.md + references/ + README
+xiaohongshu-user-operations/  # SKILL.md + references/ + templates/ + evals/ + README
 xianyu-operations/        # SKILL.md + references/ + templates/ + README
 quadlet-creator/          # SKILL.md + references/ + templates/ + README
 video-edit-planner/       # SKILL.md + references/ + scripts/ + README
