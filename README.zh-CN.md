@@ -54,3 +54,7 @@ ui-design-iteration/      # SKILL.md + references/ + scripts/ + templates/ + REA
 ```
 
 其中若干技能原以独立仓库维护（那些仓库已归档并删除），现已合并到本仓库。
+
+## 友情链接
+
+- [LINUX DO](https://linux.do) — 中文开发者社区，聊开源项目、AI 工具与自托管。

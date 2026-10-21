@@ -56,3 +56,7 @@ ui-design-iteration/      # SKILL.md + references/ + scripts/ + templates/ + REA
 ```
 
 Several of these skills were previously maintained as standalone repositories (now archived and deleted) and were consolidated here.
+
+## Friendly links
+
+- [LINUX DO](https://linux.do) — A Chinese community forum for developers, open-source projects, AI tooling and self-hosting.
