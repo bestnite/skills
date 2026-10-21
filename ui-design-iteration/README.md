@@ -43,7 +43,7 @@ The shipped code needs a browser to open the draft and Python 3 (standard librar
 - The user wants to adjust details by hand instead of describing them in words.
 - There is no design yet, and the fastest good start is a page that already works.
 
-With only a one-line brief, the skill starts from a reference rather than generating a page: it shortlists two or three, and the user picks.
+With only a one-line brief, the skill starts from a reference rather than generating a page: it shortlists two or three, and the user picks — or asks the agent to pick, in which case the agent says why and has the user confirm the choice next to the first draft.
 
 ## How To Use It
 

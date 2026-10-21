@@ -31,6 +31,7 @@ Then collect what no reference can know:
   - **Stack**: a template in the stack the page will be ported to makes the port nearly free.
 - Show them. If you have a browser tool, screenshot each at desktop and phone width; otherwise give the links and ask the user to look.
 - The user picks one main reference. Choosing a reference is choosing a design, so it is the user's decision, not yours. Further references may supply a single section or pattern ("the pricing table from this one"), never the overall look.
+- **When the user hands the choice to you** ("you pick"), choose only after the screening above, and pick the candidate that leaves the least of the content to composition: the one whose parts cover the hardest part of the content, then the one whose imagery the user can replace, then the one in the port's stack. Tell the user which one and why, and one line for each candidate you passed over, before drafting; record it in the contract as chosen by you on the user's request. Show the main reference again next to the first draft and ask the user to confirm it before the first review round: a reference nobody looked at is a design nobody chose, and it is cheapest to change before any section has been reviewed.
 
 ## 3. Study and measure the main reference
 

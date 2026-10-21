@@ -23,7 +23,7 @@ What the main reference does and where, precise enough to check a section it nev
 ## Source
 
 - Designed by: <the main reference, design skill, agent or person that settled composition, type and palette — or "extracted from <product and route>">
-- Main reference: <name and URL of the template or site — or "none">
+- Main reference: <name and URL of the template or site — or "none">; chosen by <the user | the agent at the user's request, with the reason and the candidates passed over; confirmed by the user on <date> or "not yet confirmed">
 - Taken as code: <parts copied from published code or saved from a live demo, with repository, block name or demo URL — or "none">
 - Taken by measurement: <parts rebuilt from a screenshot — or "none">
 - Supporting references: <URL — what was taken from it, e.g. "pricing table layout"; or "none">
