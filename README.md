@@ -18,6 +18,12 @@ A collection of agent skills for the [open agent skills ecosystem](https://www.n
 - **[android-adb](./android-adb/)** — Drive Android devices from a host shell with raw `adb`: wireless pairing and mDNS, transport selection and state recovery, input injection and display/state control, logcat and artifact capture, `am instrument` and CI gating — plus the UI-tree dumps, bug reports, ANR evidence, Doze testing and test-device reset that the common skill packs leave out.
 - **[ui-design-iteration](./ui-design-iteration/)** — Take a UI from first draft to reviewed page: start from a reference the user picks — their own preferred sources first, a starter catalogue otherwise — carrying its design language — from its code or its live demo — over to the content the page needs, instead of generating from a brief, then make it a live page — bind style into tokens, pick and mark elements so the selection reaches the agent, turn each request into an addressed single-dimension patch, audit limits and accessibility at every width.
 
+## DSH-specific skills
+
+- **[council](./dsh/council/)** — Independent three-model deliberation through DSH Agent Teams, chaired by the current lead. Requires lead-controlled teammate model selection; not portable to arbitrary agent hosts.
+
+The [DSH category](./dsh/) groups platform-specific skills. Install each leaf skill separately; do not assume nested discovery.
+
 ## Installation
 
 ```bash
@@ -31,7 +37,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s quadlet-creator
 npx skills add https://git.nite07.com/nite/skills.git --list
 ```
 
-Compatible with 73+ agent frameworks, including Claude Code, Codex, Cursor, and OpenCode. Each skill's own README covers manual installation and usage details.
+Portable skills target the open agent skills ecosystem, including Claude Code, Codex, Cursor, and OpenCode. Skills under `dsh/` require DSH and their declared capabilities; installing them elsewhere does not provide those capabilities. Each skill's own README covers manual installation and usage details.
 
 ## Authoring rules
 
@@ -41,9 +47,11 @@ hardcoded paths, no secrets, structure and writing conventions — are in
 
 ## Repository Layout
 
-Each top-level directory is one self-contained skill (`SKILL.md` plus optional supporting files), following the open agent skills format:
+Portable skills have one top-level directory each. DSH-specific skills live under `dsh/<skill-name>/`. Each leaf skill is self-contained (`SKILL.md` plus optional supporting files), following the open agent skills format:
 
 ```text
+dsh/council/             # DSH-only SKILL.md + bilingual README
+dsh/                     # Category index, not a skill
 china-weather-query/      # SKILL.md + references/ + scripts/ + tests/ + README
 chinese-humanizer/        # SKILL.md + references/ + README
 discord-user-operations/  # SKILL.md + references/ + README

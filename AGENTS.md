@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Rules for anyone — agent or human — adding or editing a skill in this repository.
-They apply to every top-level skill directory.
+They apply to every skill directory, including skills nested under platform categories.
 
 ## 1. English first — but only where it does not cost meaning
 
@@ -107,8 +107,11 @@ They apply to every top-level skill directory.
 
 ## 4. Structure and naming
 
-- One top-level directory per skill; the directory name is the skill name
-  (lowercase, hyphens).
+- Keep portable skills in top-level directories. Put DSH-specific skills under
+  `dsh/<skill-name>/`; `dsh/` is a category, not a skill. In either case the leaf
+  directory name is the skill name (lowercase, hyphens), and each skill stays
+  independently installable. Do not assume a host discovers nested categories;
+  install or link the individual leaf skill directory.
 - Required: `SKILL.md` (YAML frontmatter with `name` and `description`),
   `README.md`, and `README.zh-CN.md`. Optional: `references/`, `templates/`,
   `scripts/`, `tests/`, `assets/` — and see §6 before adding anything to

@@ -18,6 +18,12 @@
 - **[android-adb](./android-adb/)** — 用原生 `adb` 从主机终端操作 Android 设备：无线配对与 mDNS、设备选择与状态恢复、输入注入与显示/状态控制、logcat 与产物取证、`am instrument` 与 CI 门禁；并补上常见技能包缺的 UI 树 dump、bug report、ANR 证据、Doze 测试与测试机复位。
 - **[ui-design-iteration](./ui-design-iteration/)** — 把 UI 从初稿带到评审完成：从用户选定的参考起步——优先用户自己偏好的来源，没有时用入门清单——把它的设计语言（取自它的代码或线上 demo）搬到页面需要的内容上，而不是凭一句话生成；再把它变成可用的实时页面——样式收进 token，点选和标记元素让选区直接到达 agent，每次反馈变成带目标、单维度的 patch，并在每个宽度下检查度量上限与可访问性。
 
+## DSH 专属技能
+
+- **[council](./dsh/council/)** — 借助 DSH Agent Teams 组织三个不同模型独立评议，由当前 lead 主持裁决。需要允许 lead 选择子智能体模型，不适用于任意 agent 平台。
+
+[DSH 分类](./dsh/)集中存放依赖平台能力的技能。请逐个安装具体技能，不假定扫描器支持递归发现。
+
 ## 安装
 
 ```bash
@@ -31,7 +37,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s quadlet-creator
 npx skills add https://git.nite07.com/nite/skills.git --list
 ```
 
-兼容 73+ agent 框架，包括 Claude Code、Codex、Cursor、OpenCode 等。手动安装与使用说明见各技能目录内的 README。
+通用技能面向开放 agent skills 生态，包括 Claude Code、Codex、Cursor、OpenCode 等。`dsh/` 中的技能需要 DSH 及各自声明的能力；安装到其他平台不会补齐这些能力。手动安装与使用说明见各技能目录内的 README。
 
 ## 编写规则
 
@@ -39,9 +45,11 @@ npx skills add https://git.nite07.com/nite/skills.git --list
 
 ## 仓库结构
 
-每个顶层目录都是一个自包含的独立技能（`SKILL.md` 加可选支持文件），遵循开放 agent skills 格式：
+通用技能各占一个顶层目录，DSH 专属技能放在 `dsh/<skill-name>/` 下。每个具体技能都是自包含的独立包（`SKILL.md` 加可选支持文件），遵循开放 agent skills 格式：
 
 ```text
+dsh/council/             # DSH-only SKILL.md + bilingual README
+dsh/                     # Category index, not a skill
 china-weather-query/      # SKILL.md + references/ + scripts/ + tests/ + README
 chinese-humanizer/        # SKILL.md + references/ + README
 discord-user-operations/  # SKILL.md + references/ + README

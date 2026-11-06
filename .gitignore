@@ -6,3 +6,6 @@ node_modules/
 
 # Saved browser sessions inside skill directories — see AGENTS.md §2
 .state/
+
+# Isolated task worktrees
+.worktrees/
