@@ -40,7 +40,7 @@ Start three children with the delegation tool, one call per model, each in a fre
 
 Each call returns when the runtime accepts the child, not when the child finishes; first opinions therefore arrive one at a time as separate completion notices.
 
-An accepted start with an explicit provider and model means the live adapter validated that exact route before creating the child, so an unknown or disallowed route fails the call instead of falling back to the parent model. The subagent control roster reports only id, label, and status, so record each requested route yourself; when the actual route cannot be confirmed, report it as requested rather than confirmed. Where a roster does report a model per member, use it as route proof: a member reporting your own model means the route was never applied — stop and fix that instead of presenting the run as a multi-model council.
+An accepted start with an explicit provider and model means the live adapter validated that exact route before creating the child, so an unknown or disallowed route fails the call instead of falling back to the parent model. An omitted route is the opposite failure: it silently inherits the chair's model and looks like success from every angle except the model name, which is how a same-model run passes as a council. Verify from the child's persisted session record, which stores the provider, model, and effort it actually requested, rather than from the request you sent or from a roster display; when you cannot read that record, report the route as requested, not confirmed. Three children on the chair's model mean the council never happened — stop and state it.
 
 Include these instructions in each brief:
 

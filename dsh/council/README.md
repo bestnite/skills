@@ -11,6 +11,7 @@ A documentation-only skill for independent multi-model deliberation through dele
 - The Host's subagent model-selection permission enabled with at least three distinct routes. Allowed routes are recorded per session when it is created, so an older session may permit only the parent's own model.
 - Three distinct, available, authorized models. No particular vendor is required.
 - Continuable children when follow-up rounds matter: local spawn children accept further messages, while Codex, Claude Code, ACP, and DSH SDK backends return one final answer only.
+- An omitted route is not an error either: the child silently inherits the caller's model, which passes for a council unless the routes are verified from each child's session record.
 
 The skill inspects the exposed schemas before launching anyone. If the delegation tool offers no route fields, or the model-selection permission covers fewer than three routes, it explains the missing prerequisite and does not start a same-model substitute. Installing a skill does not enable model selection or grant permissions.
 
@@ -45,7 +46,7 @@ These are checks to perform in the target deployment, not claims that an end-to-
 - Missing route fields or an insufficient model-selection permission: no children launch; the missing prerequisite is explained without changing settings.
 - Three-model run: every start names an explicit, distinct provider and model, the accepted starts confirm those routes, and the label-to-route mapping is recorded; first-round children receive the same neutral brief and no peer opinions or lead solution.
 - Pre-assessment: before the first opinions arrive, the lead's own messages carry only the question, hard constraints, cited materials, and roster — no analysis of the question, no option ranking, and no stated expectation of which option should win.
-- Route proof: every member's reported model differs from the lead's model and from the others'; a member reporting the lead's own model means no route was applied, and the run stops instead of passing as a council.
+- Route proof: each child's persisted session record stores the provider, model, and effort it actually requested; those routes must differ from the lead's model and from each other. A child running the lead's own model means no route was applied, and the run stops instead of passing as a council.
 - Arrival handling: a member's reply is recorded under its ID without a standalone summary; until the third reply is in, the only interim output is a status line listing received and outstanding IDs.
 - Final synthesis: the answer gives every member a position, carries the dispute IDs, and could not have been produced from the last reply alone.
 - Clear agreement: the lead can finish without unnecessary follow-ups, while checking shared assumptions.
