@@ -10,7 +10,8 @@ Use DSH subagent delegation to obtain independent opinions from three different 
 ## Prerequisites and boundaries
 
 - Require a delegation tool that exposes child model routes: the `subagent` tool, whose schema accepts `provider`, `model`, and `reasoning_effort` where supported, plus `list_subagent_models` for discovery. Read the exposed schemas before launching anything; capability varies by deployment.
-- Agent Teams tools are the wrong surface for this. `spawn_teammate` takes only a name, a description, an initial task, and a fresh-or-fork context: it exposes no model or provider field, so a team roster alone cannot select a member's model. Agent Teams is not required by this protocol.
+- Agent Teams tools are the wrong surface for this. `spawn_teammate` takes only a name, a description, an initial task, and a fresh-or-fork context: it exposes no model or provider field, and the Team runtime passes no route to the child, so a team roster alone cannot select a member's model. Agent Teams is not required by this protocol.
+- An undeclared `model` argument is not rejected there: the value is accepted, dropped, and the child runs the caller's own model, while the roster still reports a model field. That silent pass-through is how a run can look multi-model while every member is the chair. Treat any "the tool took my model and did not complain" reasoning as void; a route is only selected when the delegation tool declares it.
 - Require the Host's subagent model-selection permission to be enabled with at least three distinct routes selected. A session records its allowed route list when it is created, so a session started before that setting changed may permit only the parent's own provider and model.
 - Require continuable children, or state the limit: local spawn children accept `send_message` and resume after settling, while Codex, Claude Code, ACP, and DSH SDK backends run one task and return one final answer. A model reachable only through such a backend can give a first opinion but cannot join a follow-up round; disclose that instead of dropping the round silently.
 - Check the Host's subagent capacity and depth settings. Capacity counts every live subagent under the main agent; when it is below three, start the children in sequence on the same unchanged brief rather than letting one start be refused.
@@ -39,7 +40,7 @@ Start three children with the delegation tool, one call per model, each in a fre
 
 Each call returns when the runtime accepts the child, not when the child finishes; first opinions therefore arrive one at a time as separate completion notices.
 
-An accepted start with an explicit provider and model means the live adapter validated that exact route before creating the child, so an unknown or disallowed route fails the call instead of falling back to the parent model. `list_agents` reports only id, label, and status, so record each requested route yourself; when the actual route cannot be confirmed, report it as requested rather than confirmed.
+An accepted start with an explicit provider and model means the live adapter validated that exact route before creating the child, so an unknown or disallowed route fails the call instead of falling back to the parent model. The subagent control roster reports only id, label, and status, so record each requested route yourself; when the actual route cannot be confirmed, report it as requested rather than confirmed. Where a roster does report a model per member, use it as route proof: a member reporting your own model means the route was never applied — stop and fix that instead of presenting the run as a multi-model council.
 
 Include these instructions in each brief:
 

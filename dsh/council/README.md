@@ -7,7 +7,7 @@ A documentation-only skill for independent multi-model deliberation through dele
 ## Requirements
 
 - A delegation tool that exposes child LLM routes: the `subagent` tool accepting `provider`, `model`, and `reasoning_effort` where supported, plus `list_subagent_models` for discovery.
-- Agent Teams tooling does not qualify. `spawn_teammate` takes a name, a description, an initial task, and a fresh-or-fork context, with no route field, so a team roster cannot select a member's model.
+- Agent Teams tooling does not qualify. `spawn_teammate` takes a name, a description, an initial task, and a fresh-or-fork context, with no route field, and the Team runtime passes no route to the child. An undeclared `model` argument is accepted and silently dropped while the member runs the caller's own model, so a roster can look multi-model while every member is the lead.
 - The Host's subagent model-selection permission enabled with at least three distinct routes. Allowed routes are recorded per session when it is created, so an older session may permit only the parent's own model.
 - Three distinct, available, authorized models. No particular vendor is required.
 - Continuable children when follow-up rounds matter: local spawn children accept further messages, while Codex, Claude Code, ACP, and DSH SDK backends return one final answer only.
@@ -45,6 +45,7 @@ These are checks to perform in the target deployment, not claims that an end-to-
 - Missing route fields or an insufficient model-selection permission: no children launch; the missing prerequisite is explained without changing settings.
 - Three-model run: every start names an explicit, distinct provider and model, the accepted starts confirm those routes, and the label-to-route mapping is recorded; first-round children receive the same neutral brief and no peer opinions or lead solution.
 - Pre-assessment: before the first opinions arrive, the lead's own messages carry only the question, hard constraints, cited materials, and roster — no analysis of the question, no option ranking, and no stated expectation of which option should win.
+- Route proof: every member's reported model differs from the lead's model and from the others'; a member reporting the lead's own model means no route was applied, and the run stops instead of passing as a council.
 - Arrival handling: a member's reply is recorded under its ID without a standalone summary; until the third reply is in, the only interim output is a status line listing received and outstanding IDs.
 - Final synthesis: the answer gives every member a position, carries the dispute IDs, and could not have been produced from the last reply alone.
 - Clear agreement: the lead can finish without unnecessary follow-ups, while checking shared assumptions.
