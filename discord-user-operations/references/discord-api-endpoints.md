@@ -4,6 +4,11 @@ Base: `https://discord.com/api/v10` (docs version; the web client uses `/v9` —
 Auth: `Authorization: <user token>` — raw token, no prefix. Writes: add `Content-Type: application/json`.
 All IDs are snowflakes (strings — never numeric-parse). `204` = success, no body.
 
+**Transport:** every call on this page is issued as an in-page `fetch()` from a
+`discord.com` page in the user's logged-in browser session. Do not replay these
+routes from a shell client or a local script — that is what gets the account
+punished (`account-safety.md`).
+
 Source: extracted from `olivier-motium/discord-user-mcp` (`src/client.ts`), 2026-09-11. Rows marked ✱ were added from live field verification the same day.
 
 ## Users
@@ -86,25 +91,23 @@ Find replies to a message:
 2. Page forward: `GET /channels/{ch}/messages?after={cursor}&limit=100`, cursor = last id of the previous batch; up to a page cap.
 3. Keep messages whose `message_reference.message_id` equals the original; sort ascending by id; report chronologically.
 
-Direct HTTP example (curl):
-
-```bash
-BASE=https://discord.com/api/v10
-# identity check
-curl -s -H "Authorization: $TOKEN" "$BASE/users/@me"
-# read history
-curl -s -H "Authorization: $TOKEN" "$BASE/channels/$CH/messages?limit=25"
-# send
-curl -s -X POST -H "Authorization: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"content":"hello"}' "$BASE/channels/$CH/messages"
-```
-
-Same-origin fetch from a discord.com page:
+Transport example — in-page `fetch()` from a logged-in `discord.com` page, which
+is the only supported shape. A `curl` equivalent of this block is not a shortcut:
+it is the account-flagging route (`account-safety.md`).
 
 ```js
+// identity check
+const me = await (await fetch('/api/v10/users/@me', { headers: { Authorization: token } })).json();
+// read history
 const r = await fetch('/api/v10/channels/' + CH + '/messages?limit=25',
   { headers: { Authorization: token } });
 const msgs = await r.json();
+// send
+await fetch('/api/v10/channels/' + CH + '/messages', {
+  method: 'POST',
+  headers: { Authorization: token, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ content: 'hello' }),
+});
 ```
 
 ## Out of Scope

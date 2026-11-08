@@ -7,44 +7,23 @@ description: "Use when operating Discord as a user: read, search, post."
 
 Read, search, and write on Discord as a regular user account (a "user token" session, no bot application). Typical work: browse servers and forum threads, read channel history, search messages, reply to threads, edit your own messages, add reactions, handle DMs.
 
-Everything here is done through Discord's official REST API. This skill covers **what to do and which mechanics matter**; pick the concrete transport that fits your available tools (see Access Paths) — a shell HTTP client, a script, or a browser automation session all reach the same API. The skill ships no code: every choice that depends on your environment is written as a decision for you to make, not a script to run.
+Everything here goes through Discord's official REST API, called from inside the browser session the user is already logged into. The skill covers **what to do and which mechanics matter**; which browser tool drives it is your environment's decision (see Access Path). The skill ships no code: every choice that depends on your environment is written as a decision for you to make, not a script to run.
 
 **Default posture: read-heavy, low frequency.** Writes that others can see (send / edit / delete / react / rename) require the user's explicit approval first: draft the exact content, get confirmation, then execute — and verify.
 
 ## Core Defaults
 
-- Verify identity before anything else: `GET /users/@me`. This also proves the credential works.
+- Verify identity before anything else: `GET /users/@me`. This also proves the session works.
 - Prefer the REST API over UI interaction. Use the rendered page only for quick reads of what is already on screen.
 - Keep requests at a human pace; treat `429` as a pacing signal, not a retry-forever loop.
-- Never print or log the token, and never store it outside this skill's `.state/` directory (`references/session-persistence.md`). A user token is account-takeover-grade.
+- Never print or log the token, and never write session material outside a `.state/` directory inside this skill (`references/session-persistence.md`). A user token is account-takeover-grade.
+- **Every call must be emitted by the browser session.** A standalone HTTP client replaying a user token is how the account gets flagged: it lacks the client identity Discord expects. Read `references/account-safety.md` before inventing any exception.
 - Before editing or deleting, re-read the target and confirm its exact ID. Ambiguity → ask, never guess.
 - If a call is forbidden or unauthorized (`401`/`403`), stop and surface it rather than silently probing alternatives.
 
-## Access Paths
+## Access Path — through a logged-in browser session
 
-Two equally valid routes to the same API; pick per available tooling (mixing is fine).
-
-### A. Direct HTTP (no browser)
-
-Works with any HTTP client (curl, requests, a script's fetch).
-
-- `https://discord.com/api/v10<path>`, header `Authorization: <user token>`.
-- Writes additionally need `Content-Type: application/json`.
-- Simplest for scripted and batch reads.
-
-### B. Through a logged-in browser session
-
-**Prerequisite:** a browser tool you can drive that reaches a logged-in Discord
-session — it needs to navigate, evaluate JS, and either use the user's own
-logged-in profile or inject their stored token. A browser with a persistent
-profile keeps the session between runs; otherwise save and restore it via
-`<skill dir>/.state/storage-state.json` (`references/session-persistence.md`).
-**You can tell whether you have
-one from your own toolset; do not probe the machine for it.** If you do not have
-one, do not improvise: read `references/browser-tool-setup.md` (text instructions
-you adapt locally, including how to stand up CloakBrowser behind Playwright MCP),
-or ask the user for a browser tool. If the user can hand over their token instead,
-Access Path A needs no browser at all and is usually the faster unblock.
+**Prerequisite:** a browser tool you can drive that reaches a logged-in Discord session — it needs to navigate, evaluate JS, and either use the user's own logged-in profile or inject their stored session. A browser with a persistent profile keeps the session between runs; otherwise save and restore it via `<skill dir>/.state/storage-state.json` (`references/session-persistence.md`). **You can tell whether you have one from your own toolset; do not probe the machine for it.** If you do not have one, do not improvise: read `references/browser-tool-setup.md` (text instructions you adapt locally, including how to stand up CloakBrowser behind Playwright MCP), or ask the user for a browser tool.
 
 When you drive a browser session that is already logged in as the user:
 
@@ -53,10 +32,14 @@ When you drive a browser session that is already logged in as the user:
 - To get the token for headers, use your tool's context-level storage export (session / storage-state dump). Do **not** expect page JS to see `localStorage` — stealth/isolated contexts routinely hide it; this is a known dead end. If it can't be obtained cleanly, ask the user.
 - Prefer API `fetch` over clicking UI controls for writes: hover-revealed menus rebuild constantly and detach between calls. Typing into the composer is a last resort, not the default.
 
+### Why there is no direct-HTTP path
+
+Calling `discord.com/api` from a shell client with a copied user token is not a shortcut; it is the fastest way to get the account punished. Field-verified 2026-11-08: that route returned a Terms-of-Service violation warning and forced a password reset. The browser is not a convenience wrapper around the API — it is the transport that carries the client identity Discord checks. Mechanism, and what to do if an account is already flagged: `references/account-safety.md`.
+
 ## Mechanics
 
-- **Auth**: `Authorization: <token>` — raw user token. No `Bot`/`Bearer` prefix (those belong to other auth schemes).
-- **Version**: `/api/v10` per docs; the web client uses `/api/v9`; both serve the routes here.
+- **Auth**: `Authorization: <token>` — raw user token. No `Bot`/`Bearer` prefix (those belong to other auth schemes). The header is only ever attached to a request the browser session itself emits, never to one from outside it.
+- **Version**: `/api/v10` per docs; the web client uses `/api/v9`; both serve the routes here. When you call from the loaded page, either works.
 - **Snowflakes**: IDs are 64-bit integers as strings — never numeric-parse (precision loss). For time filters: `snowflake = (unix_ms − 1420070400000) << 22`; reverse: `unix_ms = (id >> 22) + 1420070400000`. (Verified in field: message `1547649194527948852` ↔ 2026-09-10T16:45:21.907Z.)
 - **Rate limits**: `429` bodies carry `retry_after` (seconds, may be fractional). Wait it plus a small jitter, retry — cap ~3 attempts, then report. Buckets are per-route; a busy route doesn't block others.
 - **Statuses**: `2xx` ok; `204` no-body success (deletes). Errors: JSON `{message, code, errors?}`. `401` dead token → stop. `403` permission/feature missing (e.g. guild search disabled). `404` gone. `400` + `code 50035` = invalid form body → read `errors.<field>._errors[].message` (e.g. per-field max length).
@@ -88,7 +71,7 @@ Full endpoint catalog with params, bodies, and gotchas: `references/discord-api-
 1. Resolve the thread: its channel id; first message id = channel id.
 2. Read enough context that the reply fits the conversation.
 3. Draft the exact text; get the user's approval.
-4. `POST /channels/{thread}/messages` `{"content": "…"}`.
+4. `POST /channels/{thread}/messages` `{"content": "…"}` from the logged-in page.
 5. Verify by re-reading; report with the message id / link.
 
 ## Hard Stops
@@ -100,14 +83,17 @@ Stop and ask instead of improvising when:
 - Repeated `429` — back off and report; don't hammer.
 - The primary route is `403` — surface it; use only the documented fallbacks.
 - The target is ambiguous (which channel, user, message?) — confirm; never guess IDs.
+- No browser session is available — that is the whole capability. Do not substitute a script or shell client; report it and follow `references/browser-tool-setup.md` or ask the user.
+- Discord shows a warning, a challenge, or asks for a password reset — stop all activity and hand it to the user immediately (`references/account-safety.md`).
 
 ## Compliance & Hygiene
 
-- User-token automation ("self-botting") is against Discord's ToS. Keep it personal, low-frequency, read-mostly; no mass actions, no automated outreach, nothing spam-shaped.
-- Token hygiene: never echo it into chat, logs, commits, or notes. If a Path A token is to be kept between runs, store it only in `<skill dir>/.state/token` (`0600`, after asking once); a browser session follows `references/session-persistence.md`. Deleting either does not invalidate the token — the user revokes it by logging out of that session or changing their password.
+- User-token automation ("self-botting") is against Discord's ToS. Keep it personal, low-frequency, read-mostly; no mass actions, no automated outreach, nothing spam-shaped. Driving the real browser session lowers the detection surface; it does not make the activity permitted.
+- Token hygiene: never echo the token into chat, logs, commits, or notes. It lives inside the browser session — a persistent profile, or `.state/storage-state.json` per `references/session-persistence.md` — and this skill writes it nowhere else. Deleting that material does not invalidate the token; the user revokes it by logging out of that session or changing their password.
 
 ## Reference Routing
 
+- `references/account-safety.md` — why calls must originate in the browser, what the enforced path costs, and what to do after a flag or forced reset.
 - `references/discord-api-endpoints.md` — the full endpoint catalog (extracted from `olivier-motium/discord-user-mcp` + field-verified additions).
 - `references/browser-session-details.md` — tool-agnostic browser path: DOM hooks, composer fallback, storage pitfalls, virtualization.
 - `references/browser-tool-setup.md` — what to do when you have no browser tool (or no way to load the session): text setup instructions, no hardcoded paths.
@@ -116,4 +102,4 @@ Stop and ask instead of improvising when:
 
 ## Provenance
 
-Endpoint set extracted from `olivier-motium/discord-user-mcp` (`src/client.ts`), 2026-09-11; additions verified live the same day (thread rename limits, forum id equality, token retrieval paths, snowflake math).
+Endpoint set extracted from `olivier-motium/discord-user-mcp` (`src/client.ts`), 2026-09-11; additions verified live the same day (thread rename limits, forum id equality, token retrieval paths, snowflake math). The standalone direct-HTTP path was removed 2026-11-08 after a field incident — see `references/account-safety.md`.
