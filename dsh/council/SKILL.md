@@ -5,7 +5,7 @@ description: Use when asked for a DSH council or independent multi-model deliber
 
 # Council
 
-Use DSH Agent Teams to obtain independent opinions from three different models. The current lead and its current model chair the discussion and make the final judgment; do not create a separate chair. Use this for requested deliberation, not ordinary task splitting. Talk to the user in their own language.
+Use DSH Agent Teams to obtain independent opinions from three different models. The current lead and its current model chair the discussion after the first opinions arrive and make the final judgment; the chair does not assess the question first, and no separate chair is created. Use this for requested deliberation, not ordinary task splitting. Talk to the user in their own language.
 
 ## Prerequisites and boundaries
 
@@ -19,9 +19,15 @@ Use DSH Agent Teams to obtain independent opinions from three different models. 
 
 Choose three different teammate models from the runtime's available choices, honoring the user's selections and cost constraints. Prefer different model families when available, without hardcoding vendors or assuming diversity proves correctness. If the roster, selection, or suitability is unclear, ask the user which available models to use; do not make them repeat an already clear request.
 
-Briefly announce the lineup and default limit: three independent opinions, then at most two targeted follow-up rounds. Honor any tighter user budget; do not promise a hard token or cost cap unless the runtime enforces it.
+Briefly announce the lineup and default limit: three independent opinions, then at most two targeted follow-up rounds. Honor any tighter user budget; do not promise a hard token or cost cap unless the runtime enforces it. The announcement covers the roster and the round limit only, never how the question should be answered.
 
 Relay the user's request with only the context needed to answer it: original question, hard constraints, relevant materials, scope, and authorized research. Ask a clarification only if ambiguity prevents useful independent answers. Do not evaluate solutions first, add a preferred answer, or turn a tentative user suggestion into an established fact.
+
+The lead does not pre-assess the question, and its first council turn contains no analysis of it. Before the three first opinions arrive, the lead may only: restate the user's request, record hard constraints and cited materials, choose the roster, and decide what read-only research is authorized. It must not analyze the question, sketch a tentative answer or option ranking, define an evaluation rubric or scorecard, or signal which option it expects to win.
+
+Reading material is not pre-assessment, but only so far as needed to write an accurate brief and to know what evidence members may consult. Turning that reading into a conclusion, a comparison, or a ranked shortlist is pre-assessment, and it contaminates the independent first round even when it stays private to the lead.
+
+The lead's own analysis begins in Step 3, is built from A/B/C, and is reported in Step 4. If a formed opinion appears before the opinions arrive, the lead holds it back: it does not appear in the brief, it is not hinted at in the lineup announcement, and if it still stands at judgment time it is written in the final answer as the lead's own judgment, not as a member's finding.
 
 ## 2. Obtain independent first opinions
 
@@ -33,7 +39,7 @@ Include these instructions in each brief:
 
 Check returned member metadata or the supported runtime confirmation to verify the actual selected models, rather than trusting requested labels. If a selection fails or falls back, disclose it and correct it through the supported mechanism or ask the user; do not present duplicates as a three-model council.
 
-Collect all three substantive replies before judging them. Use stable opinion IDs A, B, and C, keeping their member/model mapping in the conversation. A delivery receipt or an inactive member is not evidence that an opinion was completed. Use actual message results; list members before waiting, and resume an inactive member with a precise request only when its required reply is missing. Do not busy-poll or repeatedly wake completed members.
+Collect all three substantive replies before judging them; only at this point does the lead's own assessment begin. Use stable opinion IDs A, B, and C, keeping their member/model mapping in the conversation. A delivery receipt or an inactive member is not evidence that an opinion was completed. Use actual message results; list members before waiting, and resume an inactive member with a precise request only when its required reply is missing. Do not busy-poll or repeatedly wake completed members.
 
 If a member fails, make at most one replacement attempt with a valid model and the unchanged neutral brief. If three opinions still cannot be obtained, disclose the missing member and ask whether to continue with the available opinions or stop. Never manufacture a vote or claim full participation.
 
