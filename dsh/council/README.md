@@ -2,15 +2,17 @@
 
 # Council for DSH
 
-A documentation-only skill for independent multi-model deliberation using DSH Agent Teams. Three teammates answer the same question independently; the current lead, using its current model, compares their evidence, requests targeted follow-ups when necessary, and makes the final recommendation. Agreement is optional.
+A documentation-only skill for independent multi-model deliberation through delegated DSH subagents. Three subagents, each started on a different model, answer the same question independently; the current lead, using its current model, compares their evidence, requests targeted follow-ups when necessary, and makes the final recommendation. Agreement is optional.
 
 ## Requirements
 
-- DSH Agent Teams enabled.
-- Lead-controlled teammate model selection enabled and exposed through a supported runtime mechanism.
-- Three distinct, available, authorized teammate models. No particular vendor is required.
+- A delegation tool that exposes child LLM routes: the `subagent` tool accepting `provider`, `model`, and `reasoning_effort` where supported, plus `list_subagent_models` for discovery.
+- Agent Teams tooling does not qualify. `spawn_teammate` takes a name, a description, an initial task, and a fresh-or-fork context, with no route field, so a team roster cannot select a member's model.
+- The Host's subagent model-selection permission enabled with at least three distinct routes. Allowed routes are recorded per session when it is created, so an older session may permit only the parent's own model.
+- Three distinct, available, authorized models. No particular vendor is required.
+- Continuable children when follow-up rounds matter: local spawn children accept further messages, while Codex, Claude Code, ACP, and DSH SDK backends return one final answer only.
 
-The skill checks live capabilities before launching members. If the spawn tool offers no model selection and the runtime supplies no supported alternative, it explains the missing prerequisite and does not start a same-model substitute. Installing a skill does not enable model selection or grant permissions.
+The skill inspects the exposed schemas before launching anyone. If the delegation tool offers no route fields, or the model-selection permission covers fewer than three routes, it explains the missing prerequisite and does not start a same-model substitute. Installing a skill does not enable model selection or grant permissions.
 
 ## Installation
 
@@ -40,8 +42,8 @@ Deliberation is read-only by instruction, subject to DSH's actual permissions an
 
 These are checks to perform in the target deployment, not claims that an end-to-end run has passed:
 
-- Missing Teams or model-selection access: no members launch; the missing prerequisite is explained without changing settings.
-- Three-model run: returned runtime metadata confirms distinct models; first-round members receive the same neutral brief and no peer opinions or lead solution.
+- Missing route fields or an insufficient model-selection permission: no children launch; the missing prerequisite is explained without changing settings.
+- Three-model run: every start names an explicit, distinct provider and model, the accepted starts confirm those routes, and the label-to-route mapping is recorded; first-round children receive the same neutral brief and no peer opinions or lead solution.
 - Pre-assessment: before the first opinions arrive, the lead's own messages carry only the question, hard constraints, cited materials, and roster — no analysis of the question, no option ranking, and no stated expectation of which option should win.
 - Arrival handling: a member's reply is recorded under its ID without a standalone summary; until the third reply is in, the only interim output is a status line listing received and outstanding IDs.
 - Final synthesis: the answer gives every member a position, carries the dispute IDs, and could not have been produced from the last reply alone.
