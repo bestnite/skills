@@ -29,8 +29,14 @@ When you drive a browser session that is already logged in as the user:
 
 - Quick reads: query the rendered DOM (hooks in `references/browser-session-details.md`).
 - Precise reads and **all writes**: issue `fetch()` from a page whose origin is `discord.com` (same-origin) with the `Authorization` header — you get the real API and JSON back.
-- To get the token for headers, use your tool's context-level storage export (session / storage-state dump). Do **not** expect page JS to see `localStorage` — stealth/isolated contexts routinely hide it; this is a known dead end. If it can't be obtained cleanly, ask the user.
+- The token for those headers is supplied, not discovered: current Discord web exposes **no** `localStorage` to page JS, so the old "read the `token` key" route is dead, and a context-level storage dump only helps for a legacy session. Get it from the user per `references/token-handoff.md`.
 - Prefer API `fetch` over clicking UI controls for writes: hover-revealed menus rebuild constantly and detach between calls. Typing into the composer is a last resort, not the default.
+
+### Getting a session
+
+Two ways to end up authenticated, and the choice follows where the browser runs. If it runs somewhere a real login is plausible — the user's own machine, or a host with ordinary egress — log in there and keep the profile (`references/session-persistence.md`). QR login exists for that, but the code lives about two minutes and datacenter egress is routinely answered with a CAPTCHA.
+
+Otherwise the user logs in on their own browser and hands over a token, which you then use from inside a `discord.com` page. Procedure, hygiene rules, tooling constraints, and account-risk notes: `references/token-handoff.md`.
 
 ### Why there is no direct-HTTP path
 
@@ -89,10 +95,11 @@ Stop and ask instead of improvising when:
 ## Compliance & Hygiene
 
 - User-token automation ("self-botting") is against Discord's ToS. Keep it personal, low-frequency, read-mostly; no mass actions, no automated outreach, nothing spam-shaped. Driving the real browser session lowers the detection surface; it does not make the activity permitted.
-- Token hygiene: never echo the token into chat, logs, commits, or notes. It lives inside the browser session — a persistent profile, or `.state/storage-state.json` per `references/session-persistence.md` — and this skill writes it nowhere else. Deleting that material does not invalidate the token; the user revokes it by logging out of that session or changing their password.
+- Token hygiene: never echo the token into chat, logs, commits, or notes. It lives either inside the browser session (a persistent profile, or `.state/storage-state.json` per `references/session-persistence.md`) or in the handoff file the user wrote for you, which you delete when the work is done (`references/token-handoff.md`). This skill copies it nowhere else. Deleting that material does not invalidate the token; the user revokes it by logging out of that session or changing their password.
 
 ## Reference Routing
 
+- `references/token-handoff.md` — authenticated without logging in: obtaining the token, moving it without leaking it, using it in-page, and the account risk that comes with it.
 - `references/account-safety.md` — why calls must originate in the browser, what the enforced path costs, and what to do after a flag or forced reset.
 - `references/discord-api-endpoints.md` — the full endpoint catalog (extracted from `olivier-motium/discord-user-mcp` + field-verified additions).
 - `references/browser-session-details.md` — tool-agnostic browser path: DOM hooks, composer fallback, storage pitfalls, virtualization.
@@ -102,4 +109,4 @@ Stop and ask instead of improvising when:
 
 ## Provenance
 
-Endpoint set extracted from `olivier-motium/discord-user-mcp` (`src/client.ts`), 2026-09-11; additions verified live the same day (thread rename limits, forum id equality, token retrieval paths, snowflake math). The standalone direct-HTTP path was removed 2026-11-08 after a field incident — see `references/account-safety.md`.
+Endpoint set extracted from `olivier-motium/discord-user-mcp` (`src/client.ts`), 2026-09-11; additions verified live the same day (thread rename limits, forum id equality, token retrieval paths, snowflake math). The standalone direct-HTTP path was removed 2026-11-08 after a field incident — see `references/account-safety.md`. On the same day the token-retrieval route was corrected: current Discord web exposes no `localStorage` to page JS, so the token now arrives by handoff (`references/token-handoff.md`).

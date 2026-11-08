@@ -24,11 +24,11 @@ Pitfalls:
 
 ## Getting the token (only needed for fetch headers)
 
-- Do **not** try to read `localStorage` from page JS first: many stealth / isolated browser setups don't expose it at all (`window.localStorage` is `undefined`). Known dead end — don't burn calls on it.
-- Instead use your tool's **context-level storage export** (the session / storage-state dump): look for the `token` entry under the `https://discord.com` origin's localStorage.
-- The stored value may be JSON-encoded (a quoted string). Unwrap: `JSON.parse` it; if the result is a string, use it — otherwise use the raw value. Sanity check: a user token is three dot-separated segments.
-- Manual alternatives (when designing a flow for a human operator): DevTools → Network → any request → copy the `Authorization` header; or extract from the desktop app's LevelDB storage.
-- Handle the token like a password: never paste it into chat or logs, and never write it anywhere but `.state/` (`session-persistence.md`).
+- Page JS cannot read it. **Verified 2026-11-08** on an ordinary desktop browser at `discord.com/channels/@me`: `typeof localStorage` is `"undefined"` — absent, not merely empty. Don't spend calls probing storage.
+- The token comes from the user, captured in their own browser: DevTools → **Network** → any `api/v9/...` request → **Request Headers** → `authorization`. Full procedure, handoff hygiene, and risk notes: `token-handoff.md`.
+- A context-level storage export may still contain a legacy `token` or `tokens` entry (`tokens` is a JSON object keyed by user id; `token` may be JSON-quoted — unwrap it when `JSON.parse` yields a string). Treat that as a bonus, never as the expected path, and never as proof that the session is alive.
+- Sanity check: a user token is three dot-separated segments.
+- Handle it as a password: never print it, never paste it into chat or logs, and delete the handoff file when the work is done.
 
 ## Writing via in-page fetch (preferred)
 

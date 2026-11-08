@@ -24,6 +24,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
 ## 依赖
 
 - **一个浏览器会话**：一个你能驱动的浏览器工具，且能触达已登录的 Discord 会话——需要能导航、能执行 JS，并使用用户自己已登录的 profile，或有办法注入其存储的会话。有没有这样的工具，由 agent 看自己的 toolset 判断；没有时，[`references/browser-tool-setup.md`](./references/browser-tool-setup.md) 说明了怎么搭一个（CloakBrowser 内核挂在 Playwright MCP 后面，带上该路径需要的存储工具）——那是让你因地制宜的指导，不是让你去跑的脚本。**不支持任何 HTTP 客户端或「把令牌交给 shell」的变体**；原因见 [`references/account-safety.md`](./references/account-safety.md)。
+- **认证**：要么在那个浏览器里直接登录——适合能显示二维码、出口看起来正常的主机；要么在登录界面不友好时（无头服务器、数据中心 IP、验证码）在你自己的浏览器里登录，再把 API 请求头里的令牌交给 agent。两种方式下，令牌都只在 `discord.com` 页面内使用；见 [`references/token-handoff.md`](./references/token-handoff.md)。
 - **在两次运行之间保留会话**：浏览器有持久 profile 时由它保留。没有时，agent 先征得一次同意，再把会话存到本技能目录下的 `.state/`（git 忽略、文件权限 `0600`），下次从那里恢复——见 [`references/session-persistence.md`](./references/session-persistence.md)。会话数据不会写到别处。
 
 ## 适用场景
@@ -38,15 +39,16 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
 
 ## 使用方式
 
-1. 提供一个目标：
+1. 先解决认证：在 agent 的浏览器里登录，或者从你自己浏览器的 Network 面板取出令牌交给 agent（不要通过聊天发送）。
+2. 提供一个目标：
    - 一个服务器、频道或帖子
    - 一条要回复或编辑的消息
-2. 说明你的目标：
+3. 说明你的目标：
    - 读取或搜索
    - 拟好的回复或编辑
    - 表情回应、置顶查询或私信
-3. 任何他人可见的内容，发送前先审阅具体文案。
-4. 写入完成后重新读取目标，验证结果。
+4. 任何他人可见的内容，发送前先审阅具体文案。
+5. 写入完成后重新读取目标，验证结果。
 
 ## 示例请求
 

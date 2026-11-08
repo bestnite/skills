@@ -34,6 +34,12 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s discord-user-operati
   tools this path needs) — as instructions to adapt, not a script to run.
   **No HTTP client and no token-in-a-shell variant is supported**; see
   [`references/account-safety.md`](./references/account-safety.md) for why.
+- **Authentication:** either log in inside that browser — best when the host can
+  show a QR code and its egress looks ordinary — or, when the login screen is
+  hostile (headless server, datacenter IP, CAPTCHA), log in on your own browser
+  and hand over the token from an API request header. Either way the token is
+  only ever used from a `discord.com` page; see
+  [`references/token-handoff.md`](./references/token-handoff.md).
 - **Keeping the session between runs:** a browser with a persistent profile keeps
   it. Otherwise the agent, after asking once, saves it to `.state/` inside this
   skill's directory (ignored by git, files `0600`) and restores it from there —
@@ -52,15 +58,17 @@ Use this skill when you want to:
 
 ## How To Use It
 
-1. Provide a target:
+1. Sort out authentication: log in inside the agent's browser, or hand over a
+   token taken from your own browser's Network panel (never through the chat).
+2. Provide a target:
    - a server, channel, or thread
    - a message to reply to or edit
-2. Say what you want:
+3. Say what you want:
    - a read or a search
    - a drafted reply or edit
    - a reaction, a pin lookup, or a DM
-3. For anything visible to others, review the exact content before it is sent.
-4. After a write, re-read the target to verify the result.
+4. For anything visible to others, review the exact content before it is sent.
+5. After a write, re-read the target to verify the result.
 
 ## Example Requests
 

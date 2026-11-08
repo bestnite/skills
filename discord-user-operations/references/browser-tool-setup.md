@@ -142,13 +142,18 @@ where the binary lives.
 
 ## After the tool exists
 
-1. Load the user's Discord session into it: a logged-in persistent profile, or
-   the storage state saved in `.state/storage-state.json` (it holds the `token`
-   entry for the `https://discord.com` origin). Where to save it after a fresh
-   login: `session-persistence.md`. Unwrapping details:
-   `browser-session-details.md`.
+1. Load the user's Discord session into it: a logged-in persistent profile, or a
+   storage state saved in `.state/storage-state.json` (where to save it after a
+   fresh login: `session-persistence.md`). Note that a storage state only helps
+   if the web client still reads it: **current Discord web exposes no
+   `localStorage` to page JS (verified 2026-11-08)**, so a restored state can
+   leave the app on a login screen while the token inside it is still valid for
+   the API. When that happens, use the token directly from a `discord.com` page —
+   `token-handoff.md`.
 2. Open `https://discord.com` and confirm you see the app shell rather than a
-   login screen — that is the session check; no code needed.
+   login screen — that is the session check. If it is a login screen and the user
+   cannot log in from this host (headless, datacenter egress, CAPTCHA), switch to
+   the handoff path instead of fighting the form.
 3. Continue with `browser-session-details.md` (DOM reads, same-origin `fetch` for
    writes).
 
