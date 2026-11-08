@@ -41,6 +41,8 @@ Check returned member metadata or the supported runtime confirmation to verify t
 
 Collect all three substantive replies before judging them; only at this point does the lead's own assessment begin. Use stable opinion IDs A, B, and C, keeping their member/model mapping in the conversation. A delivery receipt or an inactive member is not evidence that an opinion was completed. Use actual message results; list members before waiting, and resume an inactive member with a precise request only when its required reply is missing. Do not busy-poll or repeatedly wake completed members.
 
+Opinions arrive one at a time and the lead does not narrate them. When a reply lands, record it under its ID and keep waiting. Do not summarise its findings to the user, do not rate it, and do not draw any conclusion from it: the only interim output permitted before the third reply is a status line naming the IDs received and the IDs still outstanding. The same silence applies to follow-up rounds. Per-arrival summaries fragment the judgment and let the lead settle the question on partial evidence.
+
 If a member fails, make at most one replacement attempt with a valid model and the unchanged neutral brief. If three opinions still cannot be obtained, disclose the missing member and ask whether to continue with the available opinions or stop. Never manufacture a vote or claim full participation.
 
 ## 3. Compare, then discuss only what matters
@@ -58,15 +60,18 @@ Collect the replies for that round before deciding whether another is needed. In
 
 ## 4. Judge and finish
 
-The lead makes the final recommendation based on evidence, constraints, and trade-offs. A supported minority objection can outweigh the majority. If evidence is insufficient, give a conditional recommendation or say what remains undecidable; do not convert model confidence into a probability of correctness.
+The lead makes the final recommendation based on evidence, constraints, and trade-offs, drawn from A, B, and C together. A supported minority objection can outweigh the majority. If evidence is insufficient, give a conditional recommendation or say what remains undecidable; do not convert model confidence into a probability of correctness.
+
+The final answer is a synthesis of the whole set, never a restatement of the reply that happened to arrive last. If it could have been written from the final member's message alone, it is not a synthesis and must be rebuilt. Every substantive claim carries its source: an opinion ID, a dispute ID, a cited document, or an explicit note that it is the lead's own judgment. No orphan claims.
 
 Keep the final answer proportional to the question, normally covering:
 
 1. Recommendation and the decisive reasons.
-2. Shared conclusions and the evidence supporting them.
-3. Material dissent, how it was addressed, and anything still unresolved.
-4. Next verification or action, without silently starting execution.
-5. Actual participating models, follow-up rounds, failures, and any relevant verification limits. Report costs only when measured; mark estimates as estimates.
+2. Each member's position under its stable ID: what it concluded, its decisive evidence, and where it converged with or split from the others. A member absent from this section has effectively been dropped from the council.
+3. Shared conclusions and the evidence supporting them, including any assumption they share.
+4. Material dissent, how it was addressed, and anything still unresolved.
+5. Next verification or action, without silently starting execution.
+6. Actual participating models, follow-up rounds, failures, and any relevant verification limits. Report costs only when measured; mark estimates as estimates.
 
 Before finishing, collect all still-required member replies and ensure no council work is still running; on cancellation, interrupt the exact council members that are active. Do not affect unrelated teammates. Keep the existing conversation and Team messages as the working record; do not automatically create files or persistent memories.
 

@@ -30,7 +30,7 @@ Ask, for example:
 
 Specify models or budget preferences when useful. Otherwise the lead chooses from actual available choices, asking you if the roster or selection is unclear. No slash command, new UI, or model name is introduced by this package.
 
-The default is three independent first opinions and at most two targeted follow-up rounds, not a compulsory debate. The lead only relays and orchestrates: until all three first opinions are in, it does not assess the question, rank options, build an evaluation rubric, or propose its own solution, and its judgment starts in Step 3. All members assess the whole question without forced pro/con roles. Stable opinion and dispute IDs keep references consistent. Important dissent survives the final judgment.
+The default is three independent first opinions and at most two targeted follow-up rounds, not a compulsory debate. The lead only relays and orchestrates: until all three first opinions are in, it does not assess the question, rank options, build an evaluation rubric, or propose its own solution, and its judgment starts in Step 3. All members assess the whole question without forced pro/con roles. Stable opinion and dispute IDs keep references consistent. Arrivals are recorded silently rather than summarised one by one, and the final answer synthesises all three opinions with per-member attribution instead of rewriting the reply that arrived last. Important dissent survives the final judgment.
 
 ## Limits
 
@@ -43,6 +43,8 @@ These are checks to perform in the target deployment, not claims that an end-to-
 - Missing Teams or model-selection access: no members launch; the missing prerequisite is explained without changing settings.
 - Three-model run: returned runtime metadata confirms distinct models; first-round members receive the same neutral brief and no peer opinions or lead solution.
 - Pre-assessment: before the first opinions arrive, the lead's own messages carry only the question, hard constraints, cited materials, and roster — no analysis of the question, no option ranking, and no stated expectation of which option should win.
+- Arrival handling: a member's reply is recorded under its ID without a standalone summary; until the third reply is in, the only interim output is a status line listing received and outstanding IDs.
+- Final synthesis: the answer gives every member a position, carries the dispute IDs, and could not have been produced from the last reply alone.
 - Clear agreement: the lead can finish without unnecessary follow-ups, while checking shared assumptions.
 - Evidence dispute: a targeted follow-up cites stable IDs; its evidence and rebuttal reach the final answer; supported minority objections survive.
 - Failure or silent model fallback: participation is disclosed; duplicates are not presented as distinct models; an incomplete council requires the user's choice.
