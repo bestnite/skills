@@ -17,6 +17,7 @@ A collection of agent skills for the [open agent skills ecosystem](https://www.n
 - **[zitadel-administration](./zitadel-administration/)** — Operate a self-hosted ZITADEL instance through its APIs: service accounts and their three authentication methods, administrator roles at instance/org/project level, projects, OIDC/API/SAML applications, organizations, users and role assignments — plus the connectRPC v2 versus legacy v1 REST split, the error model, and the tasks only the legacy API can still do.
 - **[android-adb](./android-adb/)** — Drive Android devices from a host shell with raw `adb`: wireless pairing and mDNS, transport selection and state recovery, input injection and display/state control, logcat and artifact capture, `am instrument` and CI gating — plus the UI-tree dumps, bug reports, ANR evidence, Doze testing and test-device reset that the common skill packs leave out.
 - **[ui-design-iteration](./ui-design-iteration/)** — Take a UI from first draft to reviewed page: start from a reference the user picks — their own preferred sources first, a starter catalogue otherwise — carrying its design language — from its code or its live demo — over to the content the page needs, instead of generating from a brief, then make it a live page — bind style into tokens, pick and mark elements so the selection reaches the agent, turn each request into an addressed single-dimension patch, audit limits and accessibility at every width.
+- **[csrin-game-search](./csrin-game-search/)** — Find a game on CS.RIN.RU (Steam Underground) and get it running: the board's cookie handshake and guest limits, AppID-first search, thread and build parsing, source and host ranking taken from the staff's own trust lists, and the patch routes (Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS).
 
 ## DSH-specific skills
 
@@ -63,6 +64,7 @@ zitadel-administration/   # SKILL.md + references/ + templates/ + README
 napcat-onebot/            # SKILL.md + references/ + README
 android-adb/              # SKILL.md + references/ + README
 ui-design-iteration/      # SKILL.md + references/ + scripts/ + templates/ + README
+csrin-game-search/        # SKILL.md + references/ + templates/ + README
 ```
 
 Several of these skills were previously maintained as standalone repositories (now archived and deleted) and were consolidated here.
