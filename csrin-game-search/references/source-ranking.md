@@ -109,12 +109,13 @@ Two rules that hold regardless of what the lists currently say:
 
 One table, best record first, then a short note on what was skipped and why:
 
-| # | Uploader | Record | Build | Type | Host | Link |
-|---|---|---|---|---|---|---|
-| 1 | `<name>` | `<posts>`, joined `<year>`, first page mostly releases | `<build>` | CSF | `<host>` | `<url>` |
-| 2 | `<name>` | `<posts>`, joined `<year>` | `<build>` | pre-installed | `<host>` | `<url>` |
+| # | Uploader | Record | Build | Type | Host | State | Link |
+|---|---|---|---|---|---|---|---|
+| 1 | `<name>` | `<posts>`, joined `<year>`, first page mostly releases | `<build>` | CSF | `<host>` | alive `<date>` | `<url>` |
+| 2 | `<name>` | `<posts>`, joined `<year>` | `<build>` | pre-installed | `<host>` | dead | `<url>` |
+| 3 | `<name>` | `<posts>`, joined `<year>` | `<build>` | CSF | `<host>` | unverified | `<url>` |
 
-Every row answers: who posted it, what their record is, how new the build is, what kind of release it is, and where it comes from. A bare list of URLs is not a report.
+Every row answers: who posted it, what their record is, how new the build is, what kind of release it is, where it comes from, and whether the link answered today. A bare list of URLs is not a report, and a single URL is not a choice — see `link-verification.md`.
 
 ## Keeping this current
 

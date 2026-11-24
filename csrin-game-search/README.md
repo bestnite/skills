@@ -14,6 +14,7 @@ Link hunting alone is a half-answer. A clean Steam build that will not start is 
 - **The clean-files section** — `Steam Content Sharing` (`f=22`), login-only and invisible to guests: thread anatomy, the depot-and-manifest post that proves a build, title patterns, the archive password convention, multi-part extraction, and where the cracks actually live
 - **Ranking** — the uploader's own record first: posting volume and tenure from the board's author search, plus a sampled read of whether those posts are releases or chatter — rather than a guess from a site name; then build recency compared across both threads, then release type and host quality, with the staff ban list as a hard refusal. SCS is the purity floor, not the freshness ceiling — it is refreshed by volunteers and often lags the user-posted builds
 - **Denuvo titles** — why their clean files do not run, what a hypervisor release looks like in a game thread, the AVX2 / VT-x requirements, `VBS.cmd`, the Windows security tradeoff and how to revert it, the Linux path, and why the files are bound to one build and one game
+- **Link checks** — every candidate is checked before it is offered: alive, dead, or honestly unverified when the host hides behind a bot check; and the answer always carries several candidates across hosts and uploaders, because these links die
 - **Patching** — Steamless for the Steam Stub, Unsteam and uc-online2 for online play, GBE Fork for offline and LAN, Nemirtingas Epic Emulator for games on Epic Online Services, and the Unreal Engine two-exe trap
 - **Session hygiene** — where a cookie may be stored, why a pasted session can die between two requests, and how to tell "not logged in" from "nothing found"
 
@@ -48,6 +49,8 @@ references/thread-and-post-format.md# post templates, build stamps, pagination, 
 references/source-ranking.md        # uploader records, build comparison, release types, host quality, ban lists
 references/scs-and-clean-files.md   # f=22: threads, depots/manifests, passwords, extraction
 references/denuvo-and-hypervisor.md # Denuvo: hypervisor releases, requirements, security tradeoff
+references/link-verification.md    # verdicts, per-host behaviour, why one link is not enough
+templates/check_links.py           # liveness checker, host-aware, standard library
 references/patch-and-run.md         # Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS
 references/session-persistence.md   # where a cookie may live, and how to revoke it
 templates/csrin_session.py          # copy-and-adapt client: handshake, optional login, fetch, parse

@@ -14,6 +14,7 @@
 - **干净文件板块** —— `Steam Content Sharing`（`f=22`，只对登录用户可见）：主题结构、用 depot/manifest 证明 Build 的那一帖、标题格式、压缩包密码约定、分卷解压，以及 crack 到底在哪个板块
 - **排序** —— 先看上传者自己的记录：用论坛的作者检索拿发帖总量与注册年限，再抽读一页看这些帖是资源还是闲聊，而不是从站点名字猜；然后是两个板块的 Build 新旧对比、资源类型和网盘质量，封禁网盘一票否决。SCS 是「纯度下限」而不是「新鲜度上限」：它靠志愿者更新，常常落后于主论坛用户自己发的版本
 - **D 加密游戏** —— 为什么干净文件跑不起来、游戏帖里的 hypervisor 版本长什么样、AVX2 / VT-x 等硬件门槛、`VBS.cmd`、关掉 Windows 虚拟化安全后的代价与还原方法、Linux 方案，以及文件为什么绑定单一 Build 与单一游戏
+- **链接验活** —— 给出的每条候选都先验过：有效 / 失效 / 主机拒绝回答时如实标记为未验证；答案永远带多条跨网盘、跨上传者的候选，因为这类链接死得快
 - **打补丁** —— Steamless 去 Steam Stub、Unsteam 与 uc-online2 在线联机、GBE Fork 离线/局域网、Nemirtingas 接管 EOS，以及虚幻引擎双 exe 的坑
 - **会话卫生** —— Cookie 允许存在哪、为什么粘贴的会话会在两次请求之间失效、以及怎么区分「没登录」和「没找到」
 
@@ -48,6 +49,8 @@ references/thread-and-post-format.md# 帖子模板、Build 号、分页、链接
 references/source-ranking.md        # 上传者记录、Build 对比、资源类型、网盘质量、封禁名单
 references/scs-and-clean-files.md   # f=22：主题、depot/manifest、密码、解压
 references/denuvo-and-hypervisor.md # D 加密：hypervisor 版本、硬件门槛、安全代价
+references/link-verification.md    # 三种判定、各主机行为、为什么不能只给一条
+templates/check_links.py           # 验活脚本：按主机判定、仅标准库
 references/patch-and-run.md         # Steamless、Unsteam、GBE Fork、uc-online2、Nemirtingas EOS
 references/session-persistence.md   # Cookie 可存哪、怎么撤销
 templates/csrin_session.py          # 可复制改写的客户端：握手、可选登录、取页、解析

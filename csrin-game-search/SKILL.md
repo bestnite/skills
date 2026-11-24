@@ -40,7 +40,9 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 **4. Rank by uploader, before anything else.** Measure the account's posting volume and tenure, then compare build numbers, then look at what the release is, then at the host. Rules, the measurement recipes, and the staff ban lists are in `references/source-ranking.md`. Never present a banned host, even if it is the only link — say the thread exists and that every link in it is on the staff ban list.
 
-**5. Report, then patch.** Report a short ranked table: uploader with their record, build, release type, host, link, post permalink. Then, if the user wants to play rather than read: `references/patch-and-run.md`.
+**5. Verify the links before promising them.** If the agent can fetch a URL, check each candidate the user is about to click: `ALIVE`, `DEAD`, or `UNVERIFIED` when the host refuses to answer honestly. Never read a 403, a 429 or a JavaScript-only page as dead. Details and the per-host behaviour: `references/link-verification.md`; the shipped checker is `templates/check_links.py`.
+
+**6. Report every viable candidate, then patch.** Never hand over a single link. Report a short ranked table — uploader with their record, build, release type, host, link, verdict, post permalink — and keep three or four candidates spread across hosts and uploaders, so a dead or throttled host does not sink the answer. Then, if the user wants to play rather than read: `references/patch-and-run.md`.
 
 ## Ranking, in one table
 
@@ -65,6 +67,8 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - Do not answer from one post. The newest build is usually a later post in the same thread, and uploaders re-upload when hosts die.
 - Do not run searches in a loop. The board answers `Sorry but you cannot use search at this time` and the wait is minutes; plan two or three queries, not twenty.
 - Do not hand the user a link and stop. The patch step is what makes the download usable, and it is short.
+- Do not return one candidate. File hosts die; give every viable option found, best first, each with its verdict.
+- Do not call a link dead because a bot check refused you. 401/403/429/503 and JavaScript-only pages are `UNVERIFIED`.
 - Do not present a Denuvo title's download as something that will start. It needs a hypervisor release for that exact build, and running it means turning Windows' virtualization-based security off for the session.
 - Do not mix hypervisor crack files across games or builds. The Denuvo token is bound to one build, and the hypervisor drivers carry game-specific code.
 
@@ -76,8 +80,10 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - `references/scs-and-clean-files.md` — the clean-files section: thread anatomy, depots and manifests, title patterns, passwords, extraction, dead links.
 - `references/source-ranking.md` — measuring an uploader's record, build comparison, release types, host quality, and the staff ban lists.
 - `references/denuvo-and-hypervisor.md` — why clean files do not run, what a hypervisor release is, hardware requirements, the security tradeoff, and the Linux path.
+- `references/link-verification.md` — the three verdicts, how hosts answer, and the rule against returning a single link.
 - `references/patch-and-run.md` — Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS, and the traps between them.
 - `references/session-persistence.md` — the rules for storing a login in `.state/`.
+- `templates/check_links.py` — liveness checker: one request per URL, host-aware verdicts, standard library only.
 - `templates/csrin_session.py` — copy-and-adapt client: handshake, optional login, fetch, and parse either a topic page (posts, build stamps, links) or a search page (topic id, author, build, excerpt) to JSON. Standard library only; it makes no decisions for you.
 
 Prose carries the judgement; the template carries only the parts that must be byte-exact (cookie names, handshake order, parse targets).
