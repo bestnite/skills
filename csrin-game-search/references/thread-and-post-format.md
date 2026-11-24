@@ -6,12 +6,12 @@ Verified against the live board on 2026-11-24.
 
 | URL | Meaning |
 |---|---|
-| `viewtopic.php?f=10&t=145160` | topic, page 1; `f` is accepted but the topic id is what matters |
-| `viewtopic.php?t=145160&start=3030` | page 21 — `start` is a post offset in steps of 15 |
-| `viewtopic.php?p=3591862#p3591862` | permalink to one post |
-| `viewtopic.php?t=145160&view=print` | print view: all posts, still link-masked for guests |
+| `viewtopic.php?f=<forum>&t=<topic>` | topic, page 1; the forum id is accepted but the topic id is what matters |
+| `viewtopic.php?t=<topic>&start=<n>` | later page — `start` is a post offset in steps of 15 |
+| `viewtopic.php?p=<post>#p<post>` | permalink to one post |
+| `viewtopic.php?t=<topic>&view=print` | print view: all posts, still link-masked for guests |
 | `viewforum.php?f=10` | topic list, last-post time per row |
-| `feed.php?t=145160` | Atom, last 15 posts with full post HTML |
+| `feed.php?t=<topic>` | Atom, last 15 posts with full post HTML |
 | `memberlist.php?mode=viewprofile&u=<id>` | uploader profile — join date and post count are the reputation signal |
 
 15 posts per page. A big game thread can pass 200 pages; the pagination block lists the last pages directly, so read the last page first instead of walking forward.
@@ -36,21 +36,21 @@ The header image URL carries the AppID even for an anonymous reader, whose Store
 **Upload post — the payload.** Uploaders do not follow one template. Observed shapes:
 
 ```
-ELDEN RING NIGHTREIGN (v1.03.5 | Build 22818764 ALL DLC + ONLINE) (26.41 GB)
+<GAME> (v<version> | Build <build> ALL DLC + ONLINE) (<size>)
   ~Pre-Installed, Download, extract, Play
 
-Game v1.03.3 / Calibration v1.03.5 [Build 22818764] loose files update and
-  regulation.bin are now in my previous download post <link>
+Game v<version> / patch v<version> [Build <build>] loose files update and
+  <file> is now in my previous download post <link>
 
-✦ Game Name: ... ✦ Build ID: 22818764 ✦ Base Game 26 GB, 1 Part
+✦ Game Name: ... ✦ Build ID: <build> ✦ Base Game <size>, <parts>
   ╰┈➤ Download Links: ✦ <host> (DDL Available, ...)
 ```
 
 So the build stamp has to be extracted with tolerant matching, not a fixed field position:
 
-- `Build 22818764`, `BuildID: 22818764`, `[Build 22818764]`, `build 22818764`
+- a `Build` word followed by the number, in any punctuation: `Build <n>`, `BuildID: <n>`, `[Build <n>]`, `build <n>`
 - version strings `v1.03.5`, `1.0.4`, `Update 12` — useful for humans, not comparable across uploaders
-- `Pre-Installed` / `portable` / `loose files` / `repack` — tells you what the archive is before you download 26 GB
+- `Pre-Installed` / `portable` / `loose files` / `repack` — tells you what the archive is before you download a multi-gigabyte build
 
 A third shape exists for Denuvo titles — a hypervisor release, recognisable by `EXPERIMENTAL hypervisor-based release`, a build number, and a group name such as `-ARTIFACT` or `DenuvOwO`. It is not a portable build; treat it as its own category and read `denuvo-and-hypervisor.md` before reporting it as playable.
 
@@ -72,14 +72,14 @@ The href is gone — not hidden, not base64, not recoverable. `[[Please login to
 
 ```html
 <span class="link_unsafe_overlay2">
-  <a class="postlink link_unsafe_reveal" onclick="return reveal_unsafe(this);">filecrypt.cc link</a>
-  <span class="link_unsafe"><a href="https://filecrypt.cc/Container/..." class="postlink">...</a></span>
+  <a class="postlink link_unsafe_reveal" onclick="return reveal_unsafe(this);">&lt;aggregator&gt;.cc link</a>
+  <span class="link_unsafe"><a href="https://&lt;aggregator&gt;/Container/..." class="postlink">...</a></span>
 </span>
 ```
 
 The href is **in the HTML**, hidden only by `display: none`, so a parser reads it without clicking and without a browser. The stylesheet defines two warning wrappers, `link_unsafe_overlay2` (orange) and `link_unsafe_overlay` (red); the orange one is what the clean-files team's aggregator links use. Neither is a ban — the board's own SCS posts carry them — so report such a link with the flag attached instead of dropping it.
 
-Verified logged in on 2026-11-25 against `viewtopic.php?f=22&t=162990`.
+Verified logged in on 2026-11-25 against a live topic in the clean-files section.
 
 ## Parsing posts
 

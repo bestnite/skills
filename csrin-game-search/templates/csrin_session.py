@@ -9,8 +9,8 @@ Standard library only. Nothing is probed, nothing is written unless you pass
 ``--save-session``, and no request is made that the URL does not name.
 
 Usage:
-    python csrin_session.py 'viewtopic.php?f=10&t=145160' --json
-    python csrin_session.py 'search.php?keywords=2622380&sr=posts' --text
+    python csrin_session.py 'viewtopic.php?f=10&t=<topic>' --json
+    python csrin_session.py 'search.php?keywords=<appid>&sr=posts' --text
     CSRIN_USER=name CSRIN_PASSWORD=secret python csrin_session.py 'index.php'
 
 Exit codes: 0 ok, 2 board rejected the request, 3 login failed, 4 no posts found.

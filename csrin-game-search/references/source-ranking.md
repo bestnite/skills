@@ -65,7 +65,7 @@ Compare build numbers numerically, newest first.
 
 | Signal | Use |
 |---|---|
-| `Build 22818764` | primary comparison |
+| `<build>` from the post | primary comparison |
 | `v1.03.5`, `1.0.4` | human-readable, not comparable across uploaders |
 | post date | tiebreaker between equal builds |
 | "see my previous post" | follow one hop back, not the whole thread |
@@ -88,24 +88,25 @@ Do not take the thread title as proof. "Clean Steam Files" in a title, with a re
 
 ## 4. Host quality
 
-Hosts are about download experience, not trust. The board maintains a recommended file-host list in `t=95461` (1Fichier, Catbox, GoFile, MediaFire, MEGA, Pixeldrain, Sendcm, SendSpace, Yandex.Disk and others), selected on stated criteria: anonymous browsing and downloading, no VPN block, works with uBlock Origin, HTTPS, no malware ads, fast takedown. Some entries carry the board's own annotation "Requires an account" — quote it instead of promising an anonymous download.
+Hosts are about download experience, not trust. The board publishes its own recommended file-host list, on stated criteria: anonymous browsing and downloading, no VPN block, works with uBlock Origin at default settings, HTTPS with no mixed content, no malware ads, fast takedown of reports. Read the current list from the pinned topic instead of keeping a copy — it changes, and a stale copy is worse than none. Some entries carry the board's own annotation that an account is required; quote it rather than promising an anonymous download.
 
-Between two equally trusted uploads, prefer the one on a listed host, then the one with fewer hops (direct file beats a link aggregator beats a redirect chain).
+Between two equally trusted uploads, prefer the one on a listed host, then the one with fewer hops (a direct file beats a link aggregator beats a redirect chain).
 
 ## The gate: banned hosts
 
-Two pinned threads carry malware findings, and they override everything above:
+The board maintains two lists, both in pinned topics, and both override every ranking above:
 
-| Thread | What it holds |
-|---|---|
-| `t=159345` How to protect against malicious filehosters | banned hosts and multi-uploaders, plus the malware pattern behind them |
-| `t=95461` Recommended download and upload sites | the untrusted-site list at the bottom of the same post |
+| List | Where it lives | What it means |
+|---|---|---|
+| Banned hosts and sites | the pinned warning about malicious filehosters | "Do not link to these sites" — linking them is a rule violation, and some entries carry an announced start date |
+| Not-recommended sites | the bottom of the pinned recommended-sites topic | the staff will not vouch for them: malicious ads, modified game files, reuploads without credit |
 
-Banned and untrusted examples as of 2026-11-24: `dodi-repacks.site` and its mirrors, `elamigosgames.net` and its lookalikes, `gamedrive.org` / `cybar.to`, `nexusgames.to`, `repack-games.com`, `steam-repacks.net`, `steamunderground.net`, `steamunlocked.net`, `worldofpcgames.com`, `oceanofgames.com`, `IGG-Games.com`, `freetp.org`, `agfy.co`, `crackingpatching.com`, `getgamez.net`, `hishgames.org`, `games4u.org`, `loadgames.org`, `mrpcgamer.co`, `rgmechanics.com`, `sgcrack.com`, `small-games.info`, `steamcracked.co`, `steamhub.co`, `stggege.org`, `TinkerGames`, `unlocked-games.com`, `alltorrents.co`, `extrogames.com`, `gamesreleaser.com`, `game3rb.com`; filehosters 1cloudfile, bowfile, buzzheavier / bzzhr / fuckingfast, datavaults, devuploads, file-me, filemirage, fileq, koramaup, ranoz, swiftuploads, usersdrive, zpaste; and the multi-uploaders akirabox, rootz.so, multiup.io, mirrored.to (with announced ban dates). Any site named after a scene group (CODEX, CPY, RELOADED, SKIDROW) is fake by definition: scene groups do not run public sites.
+Read both lists when the task needs them. Do not memorise them and do not keep a cached copy in this skill: the thread is edited continuously, entries are added with effective dates, and a domain that was acceptable last month can be banned now.
 
-Never present a banned host as an option, even when it is the only one in the thread. Report that the thread exists and that every link in it is on the staff ban list.
+Two rules that hold regardless of what the lists currently say:
 
-Both threads are edited continuously; this file is a snapshot with a date. Re-read them when a host is unknown or newly seen.
+- Never present a banned host as an option, even when it is the only link in the thread. Report that the thread exists and that every link in it sits on the staff list.
+- Treat any site named after a scene group as fake, whatever it serves: scene groups do not run public sites.
 
 ## Reporting format
 
@@ -113,8 +114,8 @@ One table, best record first, then a short note on what was skipped and why:
 
 | # | Uploader | Record | Build | Type | Host | Link |
 |---|---|---|---|---|---|---|
-| 1 | `<name>` | 3,900 posts, joined 2019, 240 with build stamps | 22818764 | CSF | GoFile | `<url>` |
-| 2 | `<name>` | 137 posts, joined 2022 | 22818764 | pre-installed | `<site>` | `<url>` |
+| 1 | `<name>` | `<posts>`, joined `<year>`, `<n>` with build stamps | `<build>` | CSF | `<host>` | `<url>` |
+| 2 | `<name>` | `<posts>`, joined `<year>` | `<build>` | pre-installed | `<host>` | `<url>` |
 
 Every row answers: who posted it, what their record is, how new the build is, what kind of release it is, and where it comes from. A bare list of URLs is not a report.
 

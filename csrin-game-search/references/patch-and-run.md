@@ -20,7 +20,7 @@ Tool sources: [Unsteam](https://cs.rin.ru/forum/viewtopic.php?f=29&t=134707), [u
 
 ### Find the Steam AppID
 
-Read the number after `/app/` in the store URL, because all three routes need it: `store.steampowered.com/app/3683770/` gives `3683770` (example). Searching the store's address bar or [SteamDB](https://steamdb.info) are fallbacks. It feeds Unsteam's `real_app_id`, uc-online2's `ogAppId` and GBE Fork's `steam_settings\steam_appid.txt`.
+Read the number after `/app/` in the store URL, because all three routes need it: `store.steampowered.com/app/<appid>/` gives that number. Searching the store's address bar or [SteamDB](https://steamdb.info) are fallbacks. It feeds Unsteam's `real_app_id`, uc-online2's `ogAppId` and GBE Fork's `steam_settings\steam_appid.txt`.
 
 ### Check 32-bit or 64-bit
 
@@ -38,9 +38,9 @@ Those bytes are the machine type: 64-bit (`0x8664`) renders as `d?`, 32-bit (`0x
 Treat the build as Unreal Engine when the folder holds an `Engine\` directory or an exe named `-Win64-Shipping`, because UE games ship two executables and each step needs a different one:
 
 ```
-<GameDir>\BobaCafeSimulator.exe                    launcher, only ~254KB
-<GameDir>\BobaCafeSimulator\Binaries\Win64\
-    BobaCafeSimulator-Win64-Shipping.exe           actual game, hundreds of MB
+<GameDir>\<Game>.exe                              launcher, a few hundred KB
+<GameDir>\<Game>\Binaries\Win64\
+    <Game>-Win64-Shipping.exe                      actual game, hundreds of MB
 ```
 
 | Operation | Which exe | Why |
@@ -109,21 +109,21 @@ GBE Fork replaces the game's `steam_api(64).dll` so the game believes Steam is r
 
 uc-online2 spoofs the game as Spacewar (AppID 480) like Unsteam, but applies more directly: no loader, just replace the game's `steam_api(64).dll`. Steam must be running, play is limited to players on the same patch, and it adds DLC unlocking and encrypted-ticket emulation (`EmulateTicket`), which Unsteam lacks.
 
-1. Strip the Steam Stub if present. When Steamless cannot unpack the exe (Dave the Diver is the named example), set `GetStubbedLol=true` instead: uc-online2 patches the Stub at runtime and the exe stays untouched, because nothing is rewritten on disk.
+1. Strip the Steam Stub if present. When Steamless cannot unpack the exe, set `GetStubbedLol=true` instead: uc-online2 patches the Stub at runtime and the exe stays untouched, because nothing is rewritten on disk.
 2. From [Releases](https://github.com/UnionCrax-Team/uc-online2/releases), take the latest build and copy the matching architecture DLL over the original (`steam_api64.dll` or `steam_api.dll`), renaming the original to `.old` first. UE games: replace only the DLL actually loaded, per Route 2 step 2.
 3. Create `union-crax.ini` next to the game executable. Without it the AppID stays fixed at 480 and plugins never load.
 
    ```ini
    [Settings]
    AppId=480          ; spoofed AppID, default 480 (Spacewar) - usually leave as is
-   ogAppId=3683770    ; required - the game's real AppID, for overlay and tickets
+   ogAppId=<appid>    ; required - the game's real AppID, for overlay and tickets
    PluginsFolder=plugins
    GetStubbedLol=false
-   UnlockDLC=211,212  ; DLC AppIDs to unlock, comma-separated
+   UnlockDLC=<id>,<id> ; DLC AppIDs to unlock, comma-separated
    EmulateTicket=false
    ```
 
-   `3683770` and `211,212` are examples; substitute the game's IDs. `ogAppId` is mandatory because overlay and ticket emulation derive from the real store ID.
+   Substitute the game's own AppID and DLC IDs; `ogAppId` is mandatory because overlay and ticket emulation derive from the real store ID.
 4. If `EOSSDK-Win64-Shipping.dll` exists, do the EOS section below.
 5. With Steam logged in, run the game exe directly. On an authentication failure, restart Steam and retry, because the client caches the dead session. Success looks like Route 1: Steam shows **Spacewar**.
 
@@ -179,5 +179,5 @@ Check an automated result against the route's success signal, because a one-clic
 2. Rename the original to a `.old` backup before overwriting anything, because every route needs it for interfaces generation or a clean revert.
 3. Generate `steam_interfaces.txt` from the original DLL, never the emulator DLL, because the tool must read the real exported interface versions.
 4. Confirm 32-bit versus 64-bit before copying a DLL. A wrong-architecture DLL surfaces as an instant crash or "Steam not running", because the process cannot load it — a message that points nowhere near the real cause.
-5. Keep one EOS solution only. Nemirtingas, FreeTP's EpicFix and similar patches overlap, and two emulators on one DLL path produce failures that look like game bugs.
+5. Keep one EOS solution only. Nemirtingas and other EOS emulators overlap, and two emulators on one DLL path produce failures that look like game bugs.
 6. Expect online play only among players on the same patch, because both online routes rely on the Spacewar identity and never reach legitimate clients.

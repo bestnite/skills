@@ -1,6 +1,6 @@
 # Denuvo titles and hypervisor cracks
 
-Verified against the live board on 2026-11-25, from the staff's four pinned topics (`t=156407`, `t=156419`, `t=156435`, `t=159989`) and a Denuvo game thread (`t=146220`, Stellar Blade).
+Verified against the live board on 2026-11-25, from the staff's pinned topics on the subject (`t=156407`, `t=156419`, `t=156435`, `t=159989`) and from live Denuvo game threads.
 
 Some games cannot be run by swapping `steam_api64.dll`. Denuvo validates a token against the machine, and the working answer is a different kind of release: a hypervisor-based crack, published by a named group for one exact game build.
 
@@ -21,12 +21,12 @@ Do not infer Denuvo from the publisher or the genre. If the thread's newest post
 
 A hypervisor crack runs the game under a controlled hypervisor so that Denuvo's checks observe a machine that passes them. It is not a patch to a DLL and not something you can hand-edit: the release carries game-specific hypervisor drivers, a Denuvo token, and a setup script.
 
-The board's own example, Stellar Blade (`t=146220`, post from 2026-11-19):
+A release post reads roughly like this:
 
 ```
-Stellar.Blade.Update.v1.5.0.Crack.Only-ARTIFACT
-Attachment: Stellar.Blade.Update.v1.5.0.Crack.Only-ARTIFACT.7z
-The release is for the Steam build 26123051
+<Game>.Update.v<version>.Crack.Only-<GROUP>
+Attachment: <Game>.Update.v<version>.Crack.Only-<GROUP>.7z
+The release is for the Steam build <build>
 This post includes a EXPERIMENTAL hypervisor-based release. You might encounter a BSOD.
 ```
 

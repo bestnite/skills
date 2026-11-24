@@ -35,14 +35,14 @@ They answer different questions:
 ## AppID first
 
 Uploader posts embed Steam artwork URLs such as
-`https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2622380/header.jpg`
-or a cached variant like `.../api/image-cache/app_2622380_header.jpg`. That makes the AppID a word in the post text, so it is searchable:
+`https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/<appid>/header.jpg`
+or a cached variant like `.../api/image-cache/app_<appid>_header.jpg`. That makes the AppID a word in the post text, so it is searchable:
 
 ```
 search.php?keywords=<appid>&terms=all&sf=all&sr=posts&sk=t&sd=d&submit=Search
 ```
 
-Measured: AppID `2622380` returned 62 matches, newest first, with build numbers, uploader names, and host names in the excerpts. This is the single best entry point — it finds the newest build without walking 200 thread pages, and it works even for games whose thread title is not exactly the store name.
+Measured: a single AppID query returned dozens of matches, newest first, with build numbers, uploader names and host names in the excerpts. This is the single best entry point — it finds the newest build without walking 200 thread pages, and it works even for games whose thread title is not exactly the store name.
 
 Caveat: a post only matches if it actually contains the AppID. Posts that only say "updated, see previous post" do not. When the AppID query returns nothing, fall back to the title query.
 
@@ -54,9 +54,9 @@ search.php?keywords=<game+name>&terms=all&sf=titleonly&sr=topics&submit=Search
 
 One title search returns a game's two threads: the `Main Forum` discussion thread and the `SCS - <Game>` clean-files thread in Steam Content Sharing (`f=22`). Read the forum column, not the title, to tell them apart — see `scs-and-clean-files.md`.
 
-The board indexes the English Steam store name. Topic titles look like `[ Info ] ELDEN RING NIGHTREIGN`, `[ Release ] ...`, `... [Pre-Release]`, `... [Early Access]`, and separate `... Clean Steam Files` reupload topics. Search the bare game name and ignore the tag prefix rather than searching for `[Info]`.
+The board indexes the English Steam store name. Topic titles carry a square-bracket tag in front of the game name (`[ Info ]`, `[ Release ]`) or a trailing one (`[Pre-Release]`, `[Early Access]`, a cracked marker), and separate reupload topics name their purpose in the title. Search the bare game name and ignore the tag rather than searching for the tag.
 
-`sf=firstpost` is useful for a distinctive phrase — `Build ID` returned 379 opening posts — but not for a game lookup: it searches only the first post, and the newest build lives in a reply.
+`sf=firstpost` is useful for a distinctive phrase, but not for a game lookup: it searches only the opening post, and the newest build lives in a reply.
 
 ## Author search: measuring an uploader
 
@@ -81,7 +81,7 @@ A `sr=posts` row carries everything needed to continue:
 - `<a name="p<post_id>" id="p<post_id>">` — the post id, i.e. the permalink `viewtopic.php?p=<post_id>#p<post_id>`
 - `<b class="postauthor">` — the uploader
 - `Posted: <date>` — post date
-- the excerpt, where `Build 22818764`, `v1.03.5`, `26.41 GB`, host names and `[[Please login to see this link.]]` appear
+- the excerpt, where the build stamp, the version string, the download size, host names and `[[Please login to see this link.]]` appear
 
 Sorting is newest-first with `sk=t&sd=d`; the same order came back without those parameters, so treat newest-first as the default and re-sort yourself if the board changes.
 

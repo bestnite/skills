@@ -19,7 +19,7 @@ A game has two threads on this board, and they do different jobs:
 
 One title search returns both — see `search-recipes.md`.
 
-An SCS topic is two posts, both by the maintenance account **`SCS God`** (joined 2007, 20k+ posts). Do not credit that account with the upload; the human uploader is named in the post body.
+An SCS topic is two posts, both by a maintenance account — an old account with tens of thousands of posts, named after the section. Do not credit that account with the upload; the human uploader is named in the post body, next to the password.
 
 **Post 1 — the download card:**
 
@@ -30,7 +30,7 @@ Official Site:
 <store URL — carries the AppID>
 Download Links:
 Mirror 1
-filecrypt.cc link  <Game> | <date>  ⚠ Unsafe filehosts - [READ ME]
+<aggregator>.cc link  <Game> | <date>  ⚠ Unsafe filehosts - [READ ME]
   (Multi Hosts) < uploaded by <name> / pw: cs.rin.ru >
 ```
 
