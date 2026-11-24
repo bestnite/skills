@@ -30,34 +30,31 @@ Denuvo titles break this rule. Their clean files are real and still worth having
 
 Every post carries two numbers for free, in the author cell: the account's join date and its total post count. Read them from the page — no search, no login.
 
-To measure volume properly, search the author's posts:
+For volume, search the author's posts:
 
 ```
 search.php?author=<username>&terms=all&sr=posts&submit=Search
 ```
 
-The header of the result page states `Search found N matches` — that is the account's posting volume. Add a word the resource posts always contain to approximate *resource* posts:
+The result header states `Search found N matches` — the account's posting volume. Reliable, and one query.
 
-```
-search.php?author=<username>&keywords=Build&terms=all&sr=posts&submit=Search
-search.php?author=<username>&keywords=Clean+Steam+Files&terms=all&sr=posts&submit=Search
-```
+Composition comes from that same page: it lists posts with forum, date and excerpt. Count how many of the visible ones are releases (depot or manifest block, build stamp, host list) against replies and questions. That is a sample of fifteen, so phrase the conclusion as "most of the first page is releases", not as a percentage.
 
-That pair — total posts and posts containing a build stamp — is the closest thing the board offers to an uploader's track record, and it is what the ranking should quote.
+**Do not add `keywords=` to an author search.** phpBB's index drops high-frequency words, so the filter does almost nothing while looking precise: measured on 2026-11-25, `keywords=Clean Steam Files` with an author returned 4,422 matches for an account with 5,450 total posts.
 
-Cost: each query is a search, and searches are flood-limited to a few per few minutes (`search-recipes.md`). So measure the two or three accounts that are actually in contention, not every author on the page.
+Cost: one query per candidate, flood-limited to a few per few minutes (`search-recipes.md`). Measure the two or three accounts in contention, not every author on the page.
 
 | Evidence | Reading |
 |---|---|
 | Four-digit post count, account years old, the game's thread runs for years | long-running uploader — rank first |
-| Hundreds of posts concentrated in release threads | regular uploader — rank above newcomers |
+| Hundreds of posts, first page mostly release posts | regular uploader — rank above newcomers |
 | Double-digit post count on a days-old account | newcomer: not disqualifying, but it has no record yet |
 | Posting only inside this one thread, nothing else anywhere | drive-by reupload — treat as unverified |
 
 Two cautions when quoting numbers:
 
 - The `Posts:` figure in a post's author cell is **total** posts, not resource posts. Say which one you are quoting.
-- A high count proves activity, not competence: an account that posts 4,000 one-line replies has a record of talking, not of uploading. The keyword-filtered count is what separates the two, which is why both queries exist.
+- A high count proves activity, not competence: an account with 4,000 one-line replies has a record of talking, not of uploading. Only the sampled page separates the two.
 
 ## 2. Build recency
 
@@ -114,7 +111,7 @@ One table, best record first, then a short note on what was skipped and why:
 
 | # | Uploader | Record | Build | Type | Host | Link |
 |---|---|---|---|---|---|---|
-| 1 | `<name>` | `<posts>`, joined `<year>`, `<n>` with build stamps | `<build>` | CSF | `<host>` | `<url>` |
+| 1 | `<name>` | `<posts>`, joined `<year>`, first page mostly releases | `<build>` | CSF | `<host>` | `<url>` |
 | 2 | `<name>` | `<posts>`, joined `<year>` | `<build>` | pre-installed | `<host>` | `<url>` |
 
 Every row answers: who posted it, what their record is, how new the build is, what kind of release it is, and where it comes from. A bare list of URLs is not a report.

@@ -52,7 +52,7 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 | 4 | Host quality | affects the download, not the trust |
 | gate | Hosts on the staff ban list | malware; a hard refusal, never a fallback |
 
-Measure the record, do not guess it: `search.php?author=<name>&sr=posts` states `Search found N matches` for the account, and repeating it with `keywords=Build` approximates the number of *resource* posts. Every post also shows the account's join date and total post count for free. Searches are flood-limited, so measure only the two or three accounts genuinely in contention.
+Measure the record, do not guess it: `search.php?author=<name>&sr=posts` states `Search found N matches` for the account, and the same page samples what those posts are — releases or chatter. Do not add a `keywords=` filter to that query: the board's index drops high-frequency words, so the count looks precise and means nothing. Every post also shows the account's join date and total post count for free. Searches are flood-limited, so measure only the two or three accounts genuinely in contention.
 
 SCS is the purity floor, not the freshness ceiling: it is refreshed by volunteers, and in practice it often lags the Main Forum, where uploaders post each new build. Compare the build numbers from both threads before ranking anything.
 

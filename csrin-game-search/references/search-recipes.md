@@ -64,14 +64,13 @@ The board indexes the English Steam store name. Topic titles carry a square-brac
 search.php?author=<username>&terms=all&sr=posts&submit=Search
 ```
 
-The result header reads `Search found 3977 matches`: that is the account's posting volume, and it is the number the ranking in `source-ranking.md` is built on. Repeat with a keyword the resource posts always carry to separate uploads from chatter:
+The result header reads `Search found N matches`: the account's posting volume. That figure is reliable, and it is what the ranking in `source-ranking.md` starts from.
 
-```
-search.php?author=<username>&keywords=Build&terms=all&sr=posts&submit=Search
-search.php?author=<username>&keywords=Clean+Steam+Files&terms=all&sr=posts&submit=Search
-```
+**Do not try to filter it by keyword.** phpBB drops words that occur in too many posts, and a phrase every release post contains is exactly the kind of term it drops: measured on 2026-11-25, an author search with a `Clean Steam Files` keyword returned 4,422 matches for an account whose total post count was 5,450 — its whole history, not its releases. Any author-plus-keyword count is noise, however plausible it looks.
 
-Two queries per candidate, and only for candidates genuinely in contention — each one spends the search budget described below. A guest can run these; no session is needed to read the counts.
+Read composition off the same result page instead. It lists posts with forum, date and an excerpt, so the sample is already there: count how many of the visible posts are release posts — depot or manifest blocks, build stamps, host lists — against replies, questions and chatter. One page is a sample, not a census; say "most of the first page" rather than inventing a ratio.
+
+It is one search either way, so the cost per candidate is one query. Flood control applies (see below), so measure only the two or three accounts genuinely in contention.
 
 ## Result rows
 
