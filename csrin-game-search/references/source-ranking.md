@@ -2,19 +2,24 @@
 
 Verified against the live board on 2026-11-24.
 
-Ranking answers one question: *which of these links would a careful member of this board download first?* The board has its own answer — an uploader's posting history — and it is a better signal than the name of the site the file sits on.
+Ranking answers one question: *which of these links would a careful member of this board download first?* The board answers it in two stages: the clean-files section first, then the people who post in the game's own thread. The board has its own answer — an uploader's posting history — and it is a better signal than the name of the site the file sits on.
 
 ## The order
 
 | Priority | Signal | Why |
 |---|---|---|
-| 1 | **How much this account posts, and how long it has been doing it** | volume plus tenure cannot be bought by launching a site with a promising name |
-| 2 | Build recency | an old build of a patched game is a wasted download |
-| 3 | What the release is (clean files vs repack vs plain upload) | decides whether the patch routes even apply |
-| 4 | Host quality | affects the download, not the trust |
+| 1 | **An SCS thread** in `f=22`, with depots and manifests | unmodified Steam content, and a build you can verify rather than believe |
+| 2 | **How much this account posts, and how long it has been doing it** | volume plus tenure cannot be bought by launching a site with a promising name |
+| 3 | Build recency | an old build of a patched game is a wasted download |
+| 4 | What the release is (clean files vs repack vs plain upload) | decides whether the patch routes even apply |
+| 5 | Host quality | affects the download, not the trust |
 | gate | Banned hosts | malware; a hard refusal, never a ranking |
 
 Do **not** maintain a whitelist or blacklist of uploader-run sites. A site is just where the bytes sit: judge the account, then judge the host's download experience. A brandable domain tells you nothing that the author's post history does not tell you better.
+
+## 0. The clean-files section comes first
+
+When the game has an SCS topic in `f=22`, that is the answer: depots and manifests, uploaded by people who own the game, with a build id that can be checked. Ranking individual uploaders is what you do for the games it does not cover, or when the user wants a pre-installed build that needs no extraction work. Thread anatomy, passwords and extraction: `scs-and-clean-files.md`.
 
 ## 1. Measuring an uploader
 

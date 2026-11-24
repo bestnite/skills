@@ -55,7 +55,7 @@ On success the response sets `csrinru_phpbb3_u`, `csrinru_phpbb3_k`, `csrinru_ph
 
 Registration is open in principle, but this skill never creates an account: rate limits, ban lists and account recovery are the user's business, and an account is a credential the skill would then have to store.
 
-> End-to-end login with a username and password was not exercised in this verification run — the cookie path was. Treat the field list as read from the live form, and expect an extra hidden field (a form token) if the board ever hardens the login form; when that happens, read the form and copy every hidden input rather than guessing.
+Login with a username and password was exercised end to end on 2026-11-25: those fields, no hidden form token, and the response set `csrinru_phpbb3_u/_k/_sid` with the next request showing `Logout`. The account ended up as the same user the pasted cookie was failing for — which is the point: a login creates a session in the client's own network context. If the form ever gains hidden fields, copy every one of them from the page instead of guessing.
 
 ## Cookie formats the user may hand you
 

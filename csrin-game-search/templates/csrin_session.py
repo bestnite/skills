@@ -150,7 +150,11 @@ def load_saved_session() -> dict[str, str]:
         blob = json.loads(STATE_FILE.read_text())
     except (OSError, ValueError):
         return {}
-    return {k: str(v) for k, v in (blob.get("cookies") or {}).items()}
+    # Accept both {"cookies": {...}} (the documented shape) and a flat cookie map.
+    raw = blob.get("cookies") if isinstance(blob, dict) and "cookies" in blob else blob
+    if not isinstance(raw, dict):
+        return {}
+    return {k: str(v) for k, v in raw.items()}
 
 
 def login(cookies: dict[str, str], username: str, password: str) -> dict[str, str]:
@@ -308,6 +312,37 @@ SEARCH_FORUM_RE = re.compile(r'Forum:\s*<a[^>]*>([^<]+)</a>', re.S)
 SEARCH_TOTAL_RE = re.compile(r"Search found (\d+) matches?")
 
 
+TOPIC_ROW_RE = re.compile(
+    r'<a href="\./viewtopic\.php\?f=(\d+)&amp;t=(\d+)[^"]*"[^>]*class="topictitle">(.*?)</a>', re.S)
+TOPIC_FORUM_RE = re.compile(r'viewforum\.php\?f=\d+[^"]*">([^<]+)</a>')
+TOPIC_AUTHOR_RE = re.compile(r'class="topicauthor"[^>]*>.*?>([^<]+)</a>', re.S)
+
+
+def parse_topics(html: str, limit: int | None = None) -> list[dict]:
+    """Turn a topic-list search page (`sr=topics`) into rows.
+
+    One title search returns both threads a game needs: the `Main Forum`
+    discussion thread and the `Steam Content Sharing` clean-files thread. Read the
+    forum column to tell them apart.
+    """
+    rows, matches = [], list(TOPIC_ROW_RE.finditer(html))
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(html)
+        rest = html[match.end():end]
+        forum = TOPIC_FORUM_RE.search(rest)
+        author = TOPIC_AUTHOR_RE.search(rest)
+        rows.append({
+            "forum_id": match.group(1),
+            "topic_id": match.group(2),
+            "title": _text(match.group(3)),
+            "forum": _text(forum.group(1)) if forum else None,
+            "author": _text(author.group(1)) if author else None,
+        })
+        if limit and len(rows) >= limit:
+            break
+    return rows
+
+
 def _strip_search_chrome(text: str) -> str:
     """Drop the reply/view counters that precede a search result's excerpt."""
     lines = text.splitlines()
@@ -405,6 +440,23 @@ def main(argv: list[str] | None = None) -> int:
         tmp.replace(STATE_FILE)
 
     is_search = "Search found" in page or "Search these results" in page
+    if is_search and 'class="topictitle"' in page and 'name="p' not in page:
+        topics = parse_topics(page, args.max_posts)
+        if not topics:
+            print("topic search returned no rows", file=sys.stderr)
+            return 4
+        if args.json:
+            print(json.dumps({"url": args.url, "logged_in": is_logged_in(page),
+                              "matches": search_total(page), "topics": topics},
+                             indent=2, ensure_ascii=False))
+        else:
+            total = search_total(page)
+            if total is not None:
+                print(f"matches={total}")
+            for row in topics:
+                print(f"t{row['topic_id']}\tf{row['forum_id']}\t{row['author']}\t"
+                      f"[{row['forum']}] {row['title']}")
+        return 0
     if is_search:
         rows = parse_search(page, args.max_posts)
         if not rows:

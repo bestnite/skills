@@ -32,9 +32,9 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 **1. Resolve the game identity before searching.** The English store name is what the board uses, and the AppID is a better search key than the name. Use the Steam store search API (`https://store.steampowered.com/api/storesearch/?term=<name>&l=english&cc=us`) to turn a title into `{appid, canonical name}`; if the user gave an AppID, use `appdetails` to get the name. Never search a translated or abbreviated title first — the board indexes the English Steam name. That name is the usual key, not a guaranteed one: when the title query comes back empty, try the AppID, then the series or developer name.
 
-**2. Search, cheapest query first.** The AppID is usually the fastest path, because uploader posts embed Steam image URLs containing `app_<id>_header.jpg` and therefore match an AppID keyword. Search recipes, parameters, sorting, and fallbacks: `references/search-recipes.md`.
+**2. Search, cheapest query first.** A title search returns a game's two threads at once: the `Main Forum` discussion thread and the `SCS - <Game>` thread in Steam Content Sharing, which holds the clean depot files (`references/scs-and-clean-files.md`). The AppID is the other fast path, because uploader posts embed Steam image URLs containing `app_<id>_header.jpg`. Search recipes, parameters, sorting, and fallbacks: `references/search-recipes.md`.
 
-**3. Read the newest, not the whole thread.** Uploader posts carry a build stamp (`Build 22818764`, `v1.03.5 | Build ...`). Search sorted by post time, or the last pages of a long thread, gives the newest builds directly. Post shapes, pagination, and link markup: `references/thread-and-post-format.md`.
+**3. Read the newest, not the whole thread.** The SCS thread states its build in a `Depots & Manifests` post; Main Forum uploader posts carry a build stamp (`Build 22818764`, `v1.03.5 | Build ...`). Search sorted by post time, or the last pages of a long thread, gives the newest builds directly. Post shapes, pagination, and link markup: `references/thread-and-post-format.md`.
 
 **4. Rank by uploader, before anything else.** Measure the account's posting volume and tenure, then compare build numbers, then look at what the release is, then at the host. Rules, the measurement recipes, and the staff ban lists are in `references/source-ranking.md`. Never present a banned host, even if it is the only link — say the thread exists and that every link in it is on the staff ban list.
 
@@ -44,15 +44,16 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 | Priority | Signal | Why |
 |---|---|---|
-| 1 | **The uploader's record**: posting volume, tenure, how many of those posts carry build stamps | the board's own history, and the one thing a promising domain name cannot fake |
-| 2 | Build recency | an older build is a wasted download |
-| 3 | Release type: clean files, then pre-installed or repack, then unlabelled upload | decides whether the patch routes apply |
-| 4 | Host quality | affects the download, not the trust |
+| 1 | **An SCS thread** with depots and manifests | unmodified Steam content, build verifiable from the manifest list, maintained by the upload team |
+| 2 | **The uploader's record** in the Main Forum thread: posting volume, tenure, how many of those posts carry build stamps | the board's own history, and the one thing a promising domain name cannot fake |
+| 3 | Build recency | an older build is a wasted download |
+| 4 | Release type: clean files, then pre-installed or repack, then unlabelled upload | decides whether the patch routes apply |
+| 5 | Host quality | affects the download, not the trust |
 | gate | Hosts on the staff ban list | malware; a hard refusal, never a fallback |
 
 Measure the record, do not guess it: `search.php?author=<name>&sr=posts` states `Search found N matches` for the account, and repeating it with `keywords=Build` approximates the number of *resource* posts. Every post also shows the account's join date and total post count for free. Searches are flood-limited, so measure only the two or three accounts genuinely in contention.
 
-Do not keep a whitelist or blacklist of uploader-run sites. A site is where the bytes sit; judge the account, then the host's download experience.
+Do not keep a whitelist or blacklist of uploader-run sites. A site is where the bytes sit; judge the account, then the host's download experience. SCS is not an exception to this — it is a section of this board, with its own rules and its own password convention, not a third-party site.
 
 ## What not to do
 
@@ -67,6 +68,7 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - `references/access-and-session.md` — the 401 cookie handshake, login form, cookie formats, flood control, feeds.
 - `references/search-recipes.md` — search parameters, AppID search, sorting, pagination, fallbacks when search is throttled.
 - `references/thread-and-post-format.md` — post templates, build stamps, pagination, link markup, permalinks.
+- `references/scs-and-clean-files.md` — the clean-files section: thread anatomy, depots and manifests, title patterns, passwords, extraction, dead links.
 - `references/source-ranking.md` — measuring an uploader's record, build comparison, release types, host quality, and the staff ban lists.
 - `references/patch-and-run.md` — Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS, and the traps between them.
 - `references/session-persistence.md` — the rules for storing a login in `.state/`.

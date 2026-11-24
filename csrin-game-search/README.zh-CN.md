@@ -11,7 +11,8 @@
 - **站的访问模型** —— 顶替常规反爬的 401 Cookie 握手、匿名能看什么看不到什么、以及为什么带链接的答案必须登录态
 - **真正可用的检索** —— phpBB 的查询参数、用 AppID 当关键词一次命中最新 Build 的技巧、按发帖时间排序、分页，以及反复搜会触发的限流
 - **读帖** —— 两种帖子模板（游戏卡 / 上传帖）、Build 号抽取、帖子永久链接、引文与签名的坑、作者栏里带的注册时间与发帖量，以及站方渲染的两种链接状态
-- **排序** —— 先看上传者自己的记录：发帖总量、注册年限、其中多少帖带 Build 号，用论坛的作者检索量出来，而不是从站点名字猜；然后才是 Build 新旧、资源类型和网盘质量，封禁网盘则是一票否决
+- **干净文件板块** —— `Steam Content Sharing`（`f=22`，只对登录用户可见）：主题结构、用 depot/manifest 证明 Build 的那一帖、标题格式、压缩包密码约定、分卷解压，以及 crack 到底在哪个板块
+- **排序** —— 先 SCS 主题，再看上传者自己的记录：发帖总量、注册年限、其中多少帖带 Build 号，用论坛的作者检索量出来，而不是从站点名字猜；然后才是 Build 新旧、资源类型和网盘质量，封禁网盘则是一票否决
 - **打补丁** —— Steamless 去 Steam Stub、Unsteam 与 uc-online2 在线联机、GBE Fork 离线/局域网、Nemirtingas 接管 EOS，以及虚幻引擎双 exe 的坑
 - **会话卫生** —— Cookie 允许存在哪、为什么粘贴的会话会在两次请求之间失效、以及怎么区分「没登录」和「没找到」
 
@@ -33,7 +34,7 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s csrin-game-search
 ## 依赖
 
 - 能访问 `cs.rin.ru`（直连域名不通时可用它的 onion 服务）
-- 任何以「拿到下载链接」收尾的任务都需要登录态，由用户以 Cookie 或账号密码提供
+- 任何以「拿到下载链接」收尾的任务都需要登录态。账号密码更可靠，登录会在 Agent 自己的网络上下文里建立会话；粘贴 Cookie 只在 Agent 与浏览器同一出口时有效
 - 只有用到随附模板时才需要 Python 3.9+；模板仅用标准库，也不替你做任何决定
 
 ## 结构
@@ -43,7 +44,8 @@ SKILL.md                            # 入口：三阶段流程与排序摘要
 references/access-and-session.md    # 握手、登录表单、Cookie 形式、游客权限矩阵、故障对照表
 references/search-recipes.md        # 查询参数、AppID 检索、排序、限流、回退方案
 references/thread-and-post-format.md# 帖子模板、Build 号、分页、链接标签
-references/source-ranking.md        # 来源分级、网盘分级、站方信任名单、汇报格式
+references/source-ranking.md        # 上传者记录、Build 对比、资源类型、网盘质量、封禁名单
+references/scs-and-clean-files.md   # f=22：主题、depot/manifest、密码、解压
 references/patch-and-run.md         # Steamless、Unsteam、GBE Fork、uc-online2、Nemirtingas EOS
 references/session-persistence.md   # Cookie 可存哪、怎么撤销
 templates/csrin_session.py          # 可复制改写的客户端：握手、可选登录、取页、解析

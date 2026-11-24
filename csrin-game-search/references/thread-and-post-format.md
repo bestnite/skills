@@ -66,15 +66,18 @@ Treat a build number as the primary sort key, the post date as the tiebreaker, a
 
 The href is gone — not hidden, not base64, not recoverable. `[[Please login to see this link.]]` is the literal string the board renders, and it is also what appears inside search excerpts and Atom feed content.
 
-**Logged in.** Links render as anchors. Links on hosts outside the board's approved list are wrapped in a reveal widget:
+**Logged in.** Links are ordinary anchors with `class="postlink"` and `rel="nofollow"`. Links on hosts the board does not approve are wrapped in a reveal widget:
 
 ```html
-<span class="link_unsafe" style="display: none"> <a href="...">...</a> </span>
+<span class="link_unsafe_overlay2">
+  <a class="postlink link_unsafe_reveal" onclick="return reveal_unsafe(this);">filecrypt.cc link</a>
+  <span class="link_unsafe"><a href="https://filecrypt.cc/Container/..." class="postlink">...</a></span>
+</span>
 ```
 
-with a `reveal_unsafe()` click handler that flips `display`. Because the hiding is CSS on the client, a parser that reads the HTML gets the href without clicking. Do not report such a link without saying the board flagged the host as unapproved.
+The href is **in the HTML**, hidden only by `display: none`, so a parser reads it without clicking and without a browser. The stylesheet defines two warning wrappers, `link_unsafe_overlay2` (orange) and `link_unsafe_overlay` (red); the orange one is what the clean-files team's aggregator links use. Neither is a ban — the board's own SCS posts carry them — so report such a link with the flag attached instead of dropping it.
 
-> This section is the one place where the wording of the markup for a logged-in reader is still unverified end to end; the CSS and JS that produce it are confirmed in the page source, the href-inside-HTML behaviour follows from that, and any parser must degrade gracefully if an anchor is absent.
+Verified logged in on 2026-11-25 against `viewtopic.php?f=22&t=162990`.
 
 ## Parsing posts
 

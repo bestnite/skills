@@ -42,6 +42,8 @@ Caveat: a post only matches if it actually contains the AppID. Posts that only s
 search.php?keywords=<game+name>&terms=all&sf=titleonly&sr=topics&submit=Search
 ```
 
+One title search returns a game's two threads: the `Main Forum` discussion thread and the `SCS - <Game>` clean-files thread in Steam Content Sharing (`f=22`). Read the forum column, not the title, to tell them apart — see `scs-and-clean-files.md`.
+
 The board indexes the English Steam store name. Topic titles look like `[ Info ] ELDEN RING NIGHTREIGN`, `[ Release ] ...`, `... [Pre-Release]`, `... [Early Access]`, and separate `... Clean Steam Files` reupload topics. Search the bare game name and ignore the tag prefix rather than searching for `[Info]`.
 
 `sf=firstpost` is useful for a distinctive phrase — `Build ID` returned 379 opening posts — but not for a game lookup: it searches only the first post, and the newest build lives in a reply.
