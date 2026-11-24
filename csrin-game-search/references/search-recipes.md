@@ -13,11 +13,21 @@ Verified against the live board on 2026-11-24. Endpoint: `https://cs.rin.ru/foru
 | `sk` | `t` | sort key: post time |
 | `sd` | `d` / `a` | descending / ascending |
 | `start` | `0`, `15`, `30`, … | result pagination, 15 per page |
-| `fid[]` | forum id | restrict to a forum (not separately verified; expect the same flood control) |
+| `fid[]` | forum id | optional scope, for a follow-up only — see "Search globally" below |
 | `author` | username | restrict results to one account's posts — the uploader-measurement query |
 | `submit` | `Search` | required by the form, harmless in a GET |
 
-Two shapes, and they answer different questions:
+## Search globally — the forum column does the sorting
+
+Do not pre-select a section, and never run one query per forum. A global query already returns every section the account can see, and each row names its forum: `Main Forum`, `Steam Content Sharing`, `Temporarily Restricted Topics`, and so on. That column is how you tell a clean-files thread from a discussion thread — filtering by `fid[]` before you know which is which is exactly how the SCS thread gets missed.
+
+`Steam Content Sharing` is a section (`f=22`) under English Forums, not a tag and not a search mode. Its threads carry an `SCS - …` prefix in the title, which is the upload team's naming, not a phpBB category. Search the game name globally and let the forum column classify the hit.
+
+The one legitimate use of `fid[]` is a follow-up after a global search has already told you where the thread lives.
+
+## Two shapes
+
+They answer different questions:
 
 - **`sr=topics`** — "which thread is this game's?" Returns one row per topic with forum name, author, reply count, view count, last-post time. Cheap and precise when the title matches.
 - **`sr=posts`** — "what is the newest build, and who uploaded it?" Returns post rows with author, post date, and a ~300-character excerpt that usually contains the build number and host names.
