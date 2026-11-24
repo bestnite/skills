@@ -10,6 +10,10 @@ alive, dead, or unverified -- without downloading anything.
 Output: ``<VERDICT>\t<host>\t<url>\t<evidence>``; exit status is always 0,
 because a verdict is the result, not a failure.
 
+This is the cheap first pass. ``UNVERIFIED`` is a handoff, not a verdict: hand
+the URL to a browser and let the rendered page answer before you call a link
+unknowable.
+
 Three host behaviours make a naive HTTP status useless:
 
 * a public JSON API that states liveness (``pixeldrain``-style) -- ask the API;
@@ -92,8 +96,9 @@ def check(url: str) -> tuple[str, str]:
             return result
 
     if "gofile.io" in host:
-        # The content API now answers 401 to anonymous callers and the page is
-        # rendered by JavaScript, so a script cannot tell alive from dead.
+        # The content API answers 401 to anonymous callers and needs a guest or
+        # premium token; the page renders in JavaScript. HTTP cannot tell alive
+        # from dead here, so hand it to a browser rather than guessing.
         return "UNVERIFIED", "JS-only page and token-gated API; open it in a browser"
 
     if "mega.nz" in host or "mega.co.nz" in host:

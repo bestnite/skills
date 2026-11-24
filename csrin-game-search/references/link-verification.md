@@ -20,6 +20,14 @@ If nothing can fetch, say the links are unverified and why. Never label a link a
 
 The `UNVERIFIED` bucket is the one that matters. A link behind a bot check is not a broken link, and calling it dead sends the user away from a working file. The reverse mistake — calling a dead link alive because the page returned 200 — is just as common, which is why a status code alone is not enough.
 
+**`UNVERIFIED` is a handoff, not a conclusion.** It means "the cheap check could not tell", so the next step is the strongest tool in the agent's own context, in this order:
+
+1. **A browser** — renders the JavaScript page, passes the bot check, and shows what the site actually says. This is the tool that turns an honest "cannot tell" into an answer.
+2. **A fetch or extract tool** — a different transport and user agent than a bare HTTP client, which gets past some soft blocks.
+3. **An API with a guest token**, when the host offers one.
+
+Only when all of those fail does the verdict stay `UNVERIFIED`, and then the report says which tools were tried. Measured on 2026-11-25: a host whose content API answered `401` and whose page is JavaScript-only was declared unknowable over HTTP, and a rendered browser answered "This content does not exist" — the link was in fact dead. A second host refused anonymous API calls the same way, while its rendered page showed the file name. Both verdicts came from the browser, and neither was reachable with `curl`.
+
 ## Hosts answer in three different ways
 
 | Behaviour | How to check | Why status alone fails |
