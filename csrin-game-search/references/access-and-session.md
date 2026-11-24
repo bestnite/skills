@@ -80,6 +80,24 @@ If it is dead, ask for a fresh copy and use it immediately. Do not retry a dead 
 
 `memberlist.php?mode=viewprofile&u=<id>` also needs a session: anonymous clients get the login form. The join date and post count you need for judging an uploader are already in each post's author cell, so profile pages are an optional extra, not the primary source.
 
+## A pasted cookie set often cannot be replayed
+
+Three bindings were observed, and only one of them is the familiar "the cookie expired":
+
+1. **The security token did not survive the move.** A token minted in the user's browser answered 401 from this host under four different user agents, while the same browser kept working with it. Something ties the token to the client that obtained it — the network address, or a one-shot handshake — and either way a pasted token is worthless from elsewhere.
+2. **Guest sessions rotate `_sid` on every response** — three consecutive guest requests produced three different session ids. Any multi-request run must follow `Set-Cookie`, or it will look logged in once and anonymous afterwards.
+3. **The replayed phpBB session was answered as a guest**: every attempt with the pasted `csrinru_phpbb3_*` set came back with `csrinru_phpbb3_u=1` and no error, under both the original and a fresh security token. A stale copy and a client-binding rule look identical from outside, and both produce the same guest page.
+
+Consequence: cookie import is not portable. It works when the agent's requests leave from the same network as the browser, and it fails when they do not — a VPS, another VPN node, a container egress. In the failing case the run must say so rather than degrading to anonymous and reporting placeholders as results.
+
+The reliable paths, in order:
+
+1. **Credentials login from the client that will make the requests** (`ucp.php?mode=login`). The session is then born in the right network context, and the login form is the only path that does not depend on where the user's browser sits.
+2. **Route the agent's requests through the browser's egress** (the user's proxy or VPN endpoint), then import the cookies.
+3. **Have the user fetch the page themselves** and hand over the HTML — slow, but it needs no session at all.
+
+Cheap test before promising anything: request `/forum/` with only the pasted `securitytoken`. A 401 means the token will not work from here — spent, expired, or minted elsewhere; retrying the full set will not help, and the answer is a login, not another paste.
+
 ## Session material lives in `.state/`
 
 Write the cookie set to `.state/session.json` inside this skill directory, mode `0600`, and read `references/session-persistence.md` before the first write — it carries the full rules (ask once, gitignore, never print the value, deletion is the user's call).

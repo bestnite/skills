@@ -28,7 +28,7 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 ## Workflow
 
-**0. Establish the session.** Cookie string, username/password, or nothing (degraded). Details, the handshake, and where session material may be written: `references/access-and-session.md`. Do not write a session anywhere except the skill's own `.state/`, which is gitignored.
+**0. Establish the session.** Cookie string, username/password, or nothing (degraded). A pasted cookie only authenticates when the agent's requests leave from the same network as the user's browser — the board's security token and session are bound to the client that created them. When that cannot be arranged, ask for credentials and log in from the client that will make the requests; that is the path that always works. Details and the failure table: `references/access-and-session.md`. Do not write a session anywhere except the skill's own `.state/`, which is gitignored.
 
 **1. Resolve the game identity before searching.** The English store name is what the board uses, and the AppID is a better search key than the name. Use the Steam store search API (`https://store.steampowered.com/api/storesearch/?term=<name>&l=english&cc=us`) to turn a title into `{appid, canonical name}`; if the user gave an AppID, use `appdetails` to get the name. Never search a translated or abbreviated title first — the board indexes the English Steam name. That name is the usual key, not a guaranteed one: when the title query comes back empty, try the AppID, then the series or developer name.
 
