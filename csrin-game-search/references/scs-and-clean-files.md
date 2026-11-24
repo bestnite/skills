@@ -44,6 +44,12 @@ Uploaded version: <full UTC timestamp> [Build <build id>]
 
 The depot and manifest ids are what make this the trustworthy source: they identify exactly which Steam content is inside the archive, and the build id dates it. Quote the build id, not the thread title's date, when comparing versions.
 
+## Freshness
+
+An SCS thread is refreshed by the volunteer who maintains that game, on their own schedule, so its build can be older than what a user has already posted in the Main Forum thread — the maintainer of this skill reports that as the common case. Spot checks on 2026-11-25 over three games found two where both threads carried the same build — a reminder that the lag is per-game, not a rule.
+
+Read both threads' numbers before reporting: the SCS build from the `Depots & Manifests` post, and the newest build in the Main Forum thread. Report the newer one as the playable build, and the SCS copy as the verifiable one — they are different claims.
+
 ## Titles
 
 Sampled 324 titles on 2026-11-25: 276 `SCS - online <Game> [...]`, 20 `SCS - partially online <Game> [...]`, 28 pinned or administrative, and plain `SCS - <Game> [...]` entries in the archive pages. The bracketed date is the last upload date in `DD.MM.YYYY`.

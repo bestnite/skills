@@ -46,14 +46,15 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 | Priority | Signal | Why |
 |---|---|---|
-| 1 | **An SCS thread** with depots and manifests | unmodified Steam content, build verifiable from the manifest list, maintained by the upload team |
-| 2 | **The uploader's record** in the Main Forum thread: posting volume, tenure, how many of those posts carry build stamps | the board's own history, and the one thing a promising domain name cannot fake |
-| 3 | Build recency | an older build is a wasted download |
-| 4 | Release type: clean files, then pre-installed or repack, then unlabelled upload | decides whether the patch routes apply |
-| 5 | Host quality | affects the download, not the trust |
+| 1 | **The uploader's record**: posting volume, tenure, how many of those posts carry build stamps | the board's own history, and the one thing a promising domain name cannot fake |
+| 2 | **Build recency, compared across both threads** | an older build is a wasted download — and SCS is not automatically the newer one |
+| 3 | Release type: SCS depots and manifests, then pre-installed or repack, then unlabelled upload | purity decides whether the patch routes apply, not how fresh the build is |
+| 4 | Host quality | affects the download, not the trust |
 | gate | Hosts on the staff ban list | malware; a hard refusal, never a fallback |
 
 Measure the record, do not guess it: `search.php?author=<name>&sr=posts` states `Search found N matches` for the account, and repeating it with `keywords=Build` approximates the number of *resource* posts. Every post also shows the account's join date and total post count for free. Searches are flood-limited, so measure only the two or three accounts genuinely in contention.
+
+SCS is the purity floor, not the freshness ceiling: it is refreshed by volunteers, and in practice it often lags the Main Forum, where uploaders post each new build. Compare the build numbers from both threads before ranking anything.
 
 Do not keep a whitelist or blacklist of uploader-run sites. A site is where the bytes sit; judge the account, then the host's download experience. SCS is not an exception to this — it is a section of this board, with its own rules and its own password convention, not a third-party site.
 

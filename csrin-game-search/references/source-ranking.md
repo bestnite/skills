@@ -8,18 +8,21 @@ Ranking answers one question: *which of these links would a careful member of th
 
 | Priority | Signal | Why |
 |---|---|---|
-| 1 | **An SCS thread** in `f=22`, with depots and manifests | unmodified Steam content, and a build you can verify rather than believe |
-| 2 | **How much this account posts, and how long it has been doing it** | volume plus tenure cannot be bought by launching a site with a promising name |
-| 3 | Build recency | an old build of a patched game is a wasted download |
-| 4 | What the release is (clean files vs repack vs plain upload) | decides whether the patch routes even apply |
-| 5 | Host quality | affects the download, not the trust |
+| 1 | **How much this account posts, and how long it has been doing it** | volume plus tenure cannot be bought by launching a site with a promising name |
+| 2 | **Build recency, compared across both threads** | an old build is a wasted download, and SCS is not automatically the newer one |
+| 3 | Release type: SCS depots and manifests, then pre-installed, then repack, then unlabelled | purity decides whether the patch routes apply, not how fresh the build is |
+| 4 | Host quality | affects the download, not the trust |
 | gate | Banned hosts | malware; a hard refusal, never a ranking |
 
 Do **not** maintain a whitelist or blacklist of uploader-run sites. A site is just where the bytes sit: judge the account, then judge the host's download experience. A brandable domain tells you nothing that the author's post history does not tell you better.
 
-## 0. The clean-files section comes first
+## 0. SCS is the purity floor, not the freshness ceiling
 
-When the game has an SCS topic in `f=22`, that is the answer: depots and manifests, uploaded by people who own the game, with a build id that can be checked. Ranking individual uploaders is what you do for the games it does not cover, or when the user wants a pre-installed build that needs no extraction work. Thread anatomy, passwords and extraction: `scs-and-clean-files.md`.
+An SCS topic in `f=22` gives depots and manifests, uploaded by people who own the game, with a build id that can be checked. That makes it the most trustworthy *copy*. It does not make it the newest one: SCS is refreshed by volunteers, and the volunteers are not always ahead of the Main Forum, where uploaders race to post each new build.
+
+Reported by this skill's maintainer, and the reason this section is worded carefully: in practice SCS often lags the Main Forum's user-posted clean files. Spot checks on 2026-11-25 over three games were mixed and too small to generalise: two had the identical build in both threads, posted within a minute of each other. Treat freshness as unknown until you compare the numbers, and never assume either thread is ahead.
+
+So: read both threads, take the build from each (the SCS `Depots & Manifests` post, the newest build posts in the Main Forum), and rank by the numbers. SCS wins on purity and verifiability; it does not win on recency by default. Thread anatomy, passwords and extraction: `scs-and-clean-files.md`.
 
 Denuvo titles break this rule. Their clean files are real and still worth having as a base, but nothing starts until a hypervisor release for that exact build is applied — so for those games the only playable candidate is the hypervisor release, and the ranking below applies to it only for the host and the uploader, never to the build (`denuvo-and-hypervisor.md`).
 
