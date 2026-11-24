@@ -14,6 +14,7 @@ Verified against the live board on 2026-11-24. Endpoint: `https://cs.rin.ru/foru
 | `sd` | `d` / `a` | descending / ascending |
 | `start` | `0`, `15`, `30`, … | result pagination, 15 per page |
 | `fid[]` | forum id | restrict to a forum (not separately verified; expect the same flood control) |
+| `author` | username | restrict results to one account's posts — the uploader-measurement query |
 | `submit` | `Search` | required by the form, harmless in a GET |
 
 Two shapes, and they answer different questions:
@@ -44,6 +45,21 @@ search.php?keywords=<game+name>&terms=all&sf=titleonly&sr=topics&submit=Search
 The board indexes the English Steam store name. Topic titles look like `[ Info ] ELDEN RING NIGHTREIGN`, `[ Release ] ...`, `... [Pre-Release]`, `... [Early Access]`, and separate `... Clean Steam Files` reupload topics. Search the bare game name and ignore the tag prefix rather than searching for `[Info]`.
 
 `sf=firstpost` is useful for a distinctive phrase — `Build ID` returned 379 opening posts — but not for a game lookup: it searches only the first post, and the newest build lives in a reply.
+
+## Author search: measuring an uploader
+
+```
+search.php?author=<username>&terms=all&sr=posts&submit=Search
+```
+
+The result header reads `Search found 3977 matches`: that is the account's posting volume, and it is the number the ranking in `source-ranking.md` is built on. Repeat with a keyword the resource posts always carry to separate uploads from chatter:
+
+```
+search.php?author=<username>&keywords=Build&terms=all&sr=posts&submit=Search
+search.php?author=<username>&keywords=Clean+Steam+Files&terms=all&sr=posts&submit=Search
+```
+
+Two queries per candidate, and only for candidates genuinely in contention — each one spends the search budget described below. A guest can run these; no session is needed to read the counts.
 
 ## Result rows
 

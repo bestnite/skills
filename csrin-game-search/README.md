@@ -10,8 +10,8 @@ Link hunting alone is a half-answer. A clean Steam build that will not start is 
 
 - **The board's access model** — the 401 cookie handshake that replaces the usual bot wall, what an anonymous client can and cannot see, and why a downloaded link needs a session at all
 - **Search that works** — the phpBB query parameters, the AppID-as-keyword trick that finds the newest build in one query, post-time sorting, pagination, and the flood control that punishes looping
-- **Thread reading** — the two post templates (game card and upload post), build-stamp extraction, permalinks, quote and signature traps, and the two link states the board renders
-- **Ranking** — Clean Steam Files over staff-recommended direct-download sites over known uploaders over one-off uploads, with host quality and build recency as tie-breakers, built on the board's own two pinned trust lists
+- **Thread reading** — the two post templates (game card and upload post), build-stamp extraction, permalinks, quote and signature traps, the author cell that carries an uploader's tenure and post count, and the two link states the board renders
+- **Ranking** — the uploader's own record first: posting volume, tenure, and how many of those posts carry build stamps, measured with the board's author search rather than guessed from a site name; then build recency, release type and host quality, with the staff ban list as a hard refusal
 - **Patching** — Steamless for the Steam Stub, Unsteam and uc-online2 for online play, GBE Fork for offline and LAN, Nemirtingas Epic Emulator for games on Epic Online Services, and the Unreal Engine two-exe trap
 - **Session hygiene** — where a cookie may be stored, why a pasted session can die between two requests, and how to tell "not logged in" from "nothing found"
 

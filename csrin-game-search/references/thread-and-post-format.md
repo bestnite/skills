@@ -79,7 +79,8 @@ with a `reveal_unsafe()` click handler that flips `display`. Because the hiding 
 ## Parsing posts
 
 - Each post body is `<div class="postbody"> … </div>`; a page holds 15 of them.
-- Author: `<b class="postauthor">`; join date and post count sit next to it in `<span class="postdetails">` — the two numbers that separate a long-running uploader from a drive-by account.
+- Author: `<b class="postauthor">`; join date and total post count sit next to it in `<span class="postdetails">` — the two numbers that separate a long-running uploader from a drive-by account, and both are visible to an anonymous reader. The profile page behind `memberlist.php?mode=viewprofile&u=<id>` repeats them but needs a session; a post's author cell is the reliable source.
+- Volume beyond those two numbers comes from an author search (`search.php?author=<name>&sr=posts`), not from the profile page — see `search-recipes.md`.
 - Post date: `Posted: <date>` in the post header, in board-local time.
 - **Quotes are not posts.** Quote blocks contain a nested `postbody` from an earlier post, with that post's links. Attribute a quoted link to the quoted author, or better, ignore quoted links entirely and use the author's own post.
 - **Signatures are not content.** Signatures sit outside `postbody` and often carry the uploader's site link, Discord invite, or donation link. Never present a signature link as the game download.

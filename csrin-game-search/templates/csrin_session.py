@@ -66,6 +66,23 @@ def _cookie_header(cookies: dict[str, str]) -> str:
     return "; ".join(f"{k}={v}" for k, v in cookies.items())
 
 
+def _absorb(headers, cookies: dict[str, str]) -> None:
+    """Keep the board's rotated session cookies.
+
+    The board sets ``csrinru_phpbb3_u/_k/_sid`` on every response and changes
+    ``_sid`` each time. A client that pastes one cookie header and ignores the
+    response authenticates on its first request and answers as a guest from the
+    second on -- which reads exactly like an expired session, but is not. Keep
+    the jar, and the session survives.
+    """
+    for raw in headers.get_all("Set-Cookie") or []:
+        name, _, value = raw.partition("=")
+        value = value.split(";", 1)[0].strip()
+        name = name.strip()
+        if name.startswith("csrinru_phpbb3_") or name.startswith("securitytoken"):
+            cookies[name] = value
+
+
 def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
              referer: str | None = None) -> tuple[int, str]:
     """Return (status, body). Never raises for HTTP status; raises for transport."""
@@ -83,33 +100,48 @@ def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
     req = urllib.request.Request(url, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
+            _absorb(resp.headers, cookies)
             return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
+        _absorb(exc.headers, cookies)
         return exc.code, exc.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        # Slow board or a dropped connection: report as status 0 so fetch retries.
+        print(f"transport error: {exc}", file=sys.stderr)
+        return 0, ""
 
 
-def handshake(extra: dict[str, str] | None = None) -> tuple[dict[str, str], str]:
-    """Pass the 401 security check and return (cookies, index_html).
-
-    The board answers an unauthenticated request with a 401 page whose script sets
-    two cookies and redirects through /securitycheck/<path>. Sending those two
-    cookies is enough; the redirect is not needed. A token is bound to the client
-    that minted it, so always mint a fresh one and never reuse the user's.
-    """
-    cookies: dict[str, str] = dict(extra or {})
-    status, body = _request(BASE, cookies)
+def _mint_token(body: str, cookies: dict[str, str]) -> bool:
+    """Read a 401 challenge page and install its two cookies. False if absent."""
     token, exp = TOKEN_RE.search(body), TOKEN_EXP_RE.search(body)
-    if status != 401 or not token or not exp:
-        # Already past the gate (a saved token was still valid) or a different wall.
-        if status == 200:
-            return cookies, body
-        raise SystemExit(f"handshake: unexpected status {status}")
+    if not token or not exp:
+        return False
     cookies["securitytoken"] = token.group(1)
     cookies["securitytoken_expiration"] = exp.group(1)
-    status, body = _request(BASE, cookies)
-    if status != 200:
-        raise SystemExit(f"handshake: still rejected ({status})")
-    return cookies, body
+    return True
+
+
+def fetch(url: str, cookies: dict[str, str], data: bytes | None = None,
+          referer: str | None = None) -> tuple[int, str]:
+    """GET/POST with the board's two gates handled: the 401 cookie challenge and
+    the rotating session cookie.
+
+    The challenge is not a one-time gate: it reappears on some requests, so every
+    response is checked for it and answered with a fresh token before one retry.
+    A token is bound to the client that minted it, so always mint your own and
+    never replay the user's.
+    """
+    status, body = 0, ""
+    for _ in range(4):
+        status, body = _request(url, cookies, data=data, referer=referer)
+        if status == 0:
+            continue
+        if status != 401 and "CS RIN - Security check" not in body[:4000]:
+            return status, body
+        if not _mint_token(body, cookies):
+            if not _mint_token(_request(BASE, cookies)[1], cookies):
+                return status, body
+    return status, body
 
 
 def load_saved_session() -> dict[str, str]:
@@ -124,7 +156,7 @@ def load_saved_session() -> dict[str, str]:
 def login(cookies: dict[str, str], username: str, password: str) -> dict[str, str]:
     """POST the phpBB login form. Returns the refreshed cookie set."""
     url = urllib.parse.urljoin(BASE, "ucp.php?mode=login")
-    status, page = _request(url, cookies)
+    status, page = fetch(url, cookies)
     if status != 200:
         raise SystemExit(f"login: login page returned {status}")
     sid = re.search(r'name="sid"\s+value="([^"]+)"', page)
@@ -139,8 +171,8 @@ def login(cookies: dict[str, str], username: str, password: str) -> dict[str, st
     # ADAPT: hidden inputs change when the board hardens the form. If login starts
     # failing, read the form and copy every hidden field rather than guessing.
     data = urllib.parse.urlencode(fields).encode()
-    status, page = _request(url, cookies, data=data, referer=url)
-    if "mode=logout" in page or "mode=logout" in _request(BASE, cookies)[1]:
+    status, page = fetch(url, cookies, data=data, referer=url)
+    if "mode=logout" in page or "mode=logout" in fetch(BASE, cookies)[1]:
         return cookies
     raise SystemExit("login: rejected (wrong password, or a field the form now wants)")
 
@@ -273,6 +305,7 @@ def parse_posts(html: str, limit: int | None = None) -> list[dict]:
 
 SEARCH_TOPIC_RE = re.compile(r'Topic:\s*<a\s[^>]*href="[^"]*viewtopic\.php\?[^"]*?t=(\d+)[^"]*"[^>]*>(.*?)</a>', re.S)
 SEARCH_FORUM_RE = re.compile(r'Forum:\s*<a[^>]*>([^<]+)</a>', re.S)
+SEARCH_TOTAL_RE = re.compile(r"Search found (\d+) matches?")
 
 
 def _strip_search_chrome(text: str) -> str:
@@ -281,6 +314,12 @@ def _strip_search_chrome(text: str) -> str:
     while lines and re.match(r"^(Replies:|Views:|\s*$)", lines[0]):
         lines.pop(0)
     return "\n".join(lines).strip()
+
+
+def search_total(html: str) -> int | None:
+    """The result count on a search page: a cheap volume metric for one author."""
+    match = SEARCH_TOTAL_RE.search(html)
+    return int(match.group(1)) if match else None
 
 
 def parse_search(html: str, limit: int | None = None) -> list[dict]:
@@ -340,19 +379,17 @@ def main(argv: list[str] | None = None) -> int:
     else:
         cookies = load_saved_session()
 
-    if not cookies.get("securitytoken"):
-        cookies, _ = handshake(cookies)
-    else:
-        cookies, index = handshake(cookies)
-        if not is_logged_in(index):
-            # A stale phpBB session answers as a guest, not with an error.
-            print("warning: session not logged in (toolbar shows Login)", file=sys.stderr)
+    had_session = bool(cookies.get("csrinru_phpbb3_sid"))
+    _, index = fetch(BASE, cookies)
+    if had_session and not is_logged_in(index):
+        # A stale phpBB session answers as a guest, not with an error.
+        print("warning: session not logged in (toolbar shows Login)", file=sys.stderr)
 
     user, password = os.environ.get("CSRIN_USER"), os.environ.get("CSRIN_PASSWORD")
     if user and password:
-        cookies = login(cookies, user, password)
+        login(cookies, user, password)
 
-    status, page = _request(args.url, cookies, referer=BASE)
+    status, page = fetch(args.url, cookies, referer=BASE)
     if status != 200:
         print(f"request failed: {status}", file=sys.stderr)
         return 2
@@ -375,8 +412,12 @@ def main(argv: list[str] | None = None) -> int:
             return 4
         if args.json:
             print(json.dumps({"url": args.url, "logged_in": is_logged_in(page),
-                              "results": rows}, indent=2, ensure_ascii=False))
+                              "matches": search_total(page), "results": rows},
+                             indent=2, ensure_ascii=False))
         else:
+            total = search_total(page)
+            if total is not None:
+                print(f"matches={total}")
             for row in rows:
                 print(f"p{row['post_id']}\t{row['posted']}\t{row['author']}\t"
                       f"build={row['build_ids'] or '-'}\ttopic={row['topic_id']}\t"

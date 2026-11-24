@@ -65,15 +65,20 @@ Registration is open in principle, but this skill never creates an account: rate
 
 Normalise all three to the same two things: your own fresh `securitytoken` pair, plus every `csrinru_phpbb3_*` value the user supplied. Drop anything else.
 
-## Sessions are short-lived; verify before promising
+## The session cookie rotates on every response
 
-Observed in one run: the same pasted cookie set answered as a logged-in user on the first request and as a guest minutes later — the board had set `csrinru_phpbb3_u=1`, `_k=` (empty) and a new `_sid`, i.e. it discarded the session. Likely causes are server-side IP/browser validation or the user's own browser rotating the session, and neither is something the skill can control.
+The board sets `csrinru_phpbb3_u`, `_k` and `_sid` on **every** response, and `_sid` changes each time — three consecutive guest requests produced three different session ids. A browser keeps working because it stores each rotation. A client that pastes one cookie header and ignores `Set-Cookie` authenticates on its first request and answers as a guest from the second on. That looks exactly like an expired cookie and is not: it is the client dropping the rotation.
 
-Consequences for the workflow:
+So keep a jar and merge every `Set-Cookie` into it (`templates/csrin_session.py` does this in `_absorb`). With the rotation followed, a live session stays live; without it, one request is all you get.
 
-- **Verify the session with the first request**: fetch `index.php` and look for `ucp.php?mode=logout` (logged in) versus `ucp.php?mode=login` (guest). Do not infer the state from the absence of an error.
-- If the first request is already a guest, the cookie is stale — say so and ask for a fresh one instead of silently degrading to anonymous and reporting masked links.
-- Do not retry a dead cookie. A session that answered as a guest will keep answering as a guest.
+A pasted cookie can still be stale — the user's own browser rotated it after copying. Verify on the first response:
+
+- `ucp.php?mode=logout` present → logged in.
+- `ucp.php?mode=login` present, and the response set `csrinru_phpbb3_u=1` → the session row is gone; the cookie is dead.
+
+If it is dead, ask for a fresh copy and use it immediately. Do not retry a dead set, and do not silently continue as an anonymous client while reporting masked links as results.
+
+`memberlist.php?mode=viewprofile&u=<id>` also needs a session: anonymous clients get the login form. The join date and post count you need for judging an uploader are already in each post's author cell, so profile pages are an optional extra, not the primary source.
 
 ## Session material lives in `.state/`
 
