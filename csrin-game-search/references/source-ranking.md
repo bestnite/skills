@@ -107,15 +107,42 @@ Two rules that hold regardless of what the lists currently say:
 
 ## Reporting format
 
-One table, best record first, then a short note on what was skipped and why:
+Two layers: an overview table to choose from, then a self-contained block per candidate. The post permalink is provenance — where the facts came from — never a step the reader has to take.
 
-| # | Uploader | Record | Build | Type | Host | State | Link |
+Overview, best first:
+
+| # | Uploader | Record | Version / build | Type | Size | Host | State |
 |---|---|---|---|---|---|---|---|
-| 1 | `<name>` | `<posts>`, joined `<year>`, first page mostly releases | `<build>` | CSF | `<host>` | alive `<date>` | `<url>` |
-| 2 | `<name>` | `<posts>`, joined `<year>` | `<build>` | pre-installed | `<host>` | dead | `<url>` |
-| 3 | `<name>` | `<posts>`, joined `<year>` | `<build>` | CSF | `<host>` | unverified | `<url>` |
+| 1 | `<name>` | `<posts>`, joined `<year>`, first page mostly releases | `v<version>` / `<build>` | CSF | `<size>` | `<host>` | alive `<date>` |
+| 2 | `<name>` | `<posts>`, joined `<year>` | `v<version>` / `<build>` | pre-installed | `<size>` | `<host>` | dead |
+| 3 | `<name>` | `<posts>`, joined `<year>` | `v<version>` / `<build>` | repack | `<size>` | `<host>` | unverified |
 
-Every row answers: who posted it, what their record is, how new the build is, what kind of release it is, where it comes from, and whether the link answered today. A bare list of URLs is not a report, and a single URL is not a choice — see `link-verification.md`.
+Then one block per candidate, in the same order:
+
+```
+### <n>. <uploader> — <what it is>, v<version> / build <build>
+- Download: <size> archive, <size> unpacked, <n> parts
+- Contents: depots <ids> with manifests / repack base / installer; crack <emulator or group>, version
+- Password: <password>, or none
+- Install: 1) which archive to open 2) where to extract 3) which exe to run 4) which ini or steam_settings folder matters
+- Launch and notes: exe name, language switching, save path, overlay or achievement caveats
+- Links: <host> <url> — <verdict, date checked>
+- From: <post permalink>, posted <date>
+```
+
+Required fields, and why none of them can be dropped:
+
+| Field | Why it cannot be omitted |
+|---|---|
+| version + build | freshness is the whole ranking |
+| size, download and unpacked | decides whether the user can even start the download |
+| type and contents | a repack cannot be patched the way clean files can |
+| crack or emulator, with version | decides whether the game starts at all |
+| archive password | the archives are usually encrypted |
+| install steps | this is exactly the work the reader would otherwise do inside a 600-post thread |
+| a verdict per link | a dead link is not an offer |
+
+If the post does not state a field, write "not stated" rather than dropping it silently; a missing size is information too. If the install steps only exist in a `ReadMe.txt` inside the archive, say that and what it is expected to cover — do not send the reader back to the thread to find the version or the procedure.
 
 ## Keeping this current
 

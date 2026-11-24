@@ -42,7 +42,7 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 **5. Verify the links before promising them.** If the agent can fetch a URL, check each candidate the user is about to click: `ALIVE`, `DEAD`, or `UNVERIFIED`. When the cheap check cannot tell — 403, 429, a JavaScript-only page, a token-gated API — escalate to the strongest tool in context: a browser first, then a fetch tool, then a guest-token API. `UNVERIFIED` is what remains after those failed, not the first answer to a bot check. Details and the per-host behaviour: `references/link-verification.md`; the shipped checker is `templates/check_links.py`.
 
-**6. Report every viable candidate, then patch.** Never hand over a single link. Report a short ranked table — uploader with their record, build, release type, host, link, verdict, post permalink — and keep three or four candidates spread across hosts and uploaders, so a dead or throttled host does not sink the answer. Then, if the user wants to play rather than read: `references/patch-and-run.md`.
+**6. Report every viable candidate, fully, then patch.** Never hand over a single link, and never hand over a link that makes the reader open a 600-post thread for the details. Each candidate is a self-contained block: version and build, download and unpacked size, what is inside, the crack or emulator with its version, the archive password, numbered install steps, every link with its verdict, and the post permalink as provenance. Three or four candidates, spread across hosts and uploaders. Format and required fields: `references/source-ranking.md`. Then, if the user wants to play rather than read: `references/patch-and-run.md`.
 
 ## Ranking, in one table
 
