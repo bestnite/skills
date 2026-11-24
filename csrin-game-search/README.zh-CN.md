@@ -13,6 +13,7 @@
 - **读帖** —— 两种帖子模板（游戏卡 / 上传帖）、Build 号抽取、帖子永久链接、引文与签名的坑、作者栏里带的注册时间与发帖量，以及站方渲染的两种链接状态
 - **干净文件板块** —— `Steam Content Sharing`（`f=22`，只对登录用户可见）：主题结构、用 depot/manifest 证明 Build 的那一帖、标题格式、压缩包密码约定、分卷解压，以及 crack 到底在哪个板块
 - **排序** —— 先 SCS 主题，再看上传者自己的记录：发帖总量、注册年限、其中多少帖带 Build 号，用论坛的作者检索量出来，而不是从站点名字猜；然后才是 Build 新旧、资源类型和网盘质量，封禁网盘则是一票否决
+- **D 加密游戏** —— 为什么干净文件跑不起来、游戏帖里的 hypervisor 版本长什么样、AVX2 / VT-x 等硬件门槛、`VBS.cmd`、关掉 Windows 虚拟化安全后的代价与还原方法、Linux 方案，以及文件为什么绑定单一 Build 与单一游戏
 - **打补丁** —— Steamless 去 Steam Stub、Unsteam 与 uc-online2 在线联机、GBE Fork 离线/局域网、Nemirtingas 接管 EOS，以及虚幻引擎双 exe 的坑
 - **会话卫生** —— Cookie 允许存在哪、为什么粘贴的会话会在两次请求之间失效、以及怎么区分「没登录」和「没找到」
 
@@ -46,6 +47,7 @@ references/search-recipes.md        # 查询参数、AppID 检索、排序、限
 references/thread-and-post-format.md# 帖子模板、Build 号、分页、链接标签
 references/source-ranking.md        # 上传者记录、Build 对比、资源类型、网盘质量、封禁名单
 references/scs-and-clean-files.md   # f=22：主题、depot/manifest、密码、解压
+references/denuvo-and-hypervisor.md # D 加密：hypervisor 版本、硬件门槛、安全代价
 references/patch-and-run.md         # Steamless、Unsteam、GBE Fork、uc-online2、Nemirtingas EOS
 references/session-persistence.md   # Cookie 可存哪、怎么撤销
 templates/csrin_session.py          # 可复制改写的客户端：握手、可选登录、取页、解析

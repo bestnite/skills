@@ -52,6 +52,8 @@ So the build stamp has to be extracted with tolerant matching, not a fixed field
 - version strings `v1.03.5`, `1.0.4`, `Update 12` — useful for humans, not comparable across uploaders
 - `Pre-Installed` / `portable` / `loose files` / `repack` — tells you what the archive is before you download 26 GB
 
+A third shape exists for Denuvo titles — a hypervisor release, recognisable by `EXPERIMENTAL hypervisor-based release`, a build number, and a group name such as `-ARTIFACT` or `DenuvOwO`. It is not a portable build; treat it as its own category and read `denuvo-and-hypervisor.md` before reporting it as playable.
+
 Treat a build number as the primary sort key, the post date as the tiebreaker, and the version string as decoration. Compare build numbers numerically, never as strings.
 
 ## Link markup

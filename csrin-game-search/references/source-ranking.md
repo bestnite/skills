@@ -21,6 +21,8 @@ Do **not** maintain a whitelist or blacklist of uploader-run sites. A site is ju
 
 When the game has an SCS topic in `f=22`, that is the answer: depots and manifests, uploaded by people who own the game, with a build id that can be checked. Ranking individual uploaders is what you do for the games it does not cover, or when the user wants a pre-installed build that needs no extraction work. Thread anatomy, passwords and extraction: `scs-and-clean-files.md`.
 
+Denuvo titles break this rule. Their clean files are real and still worth having as a base, but nothing starts until a hypervisor release for that exact build is applied — so for those games the only playable candidate is the hypervisor release, and the ranking below applies to it only for the host and the uploader, never to the build (`denuvo-and-hypervisor.md`).
+
 ## 1. Measuring an uploader
 
 Every post carries two numbers for free, in the author cell: the account's join date and its total post count. Read them from the page — no search, no login.

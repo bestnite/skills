@@ -36,6 +36,8 @@ So: **anonymous browsing answers "does it exist, which build, who posted it" but
 
 **3. Read the newest, not the whole thread.** The SCS thread states its build in a `Depots & Manifests` post; Main Forum uploader posts carry a build stamp (`Build 22818764`, `v1.03.5 | Build ...`). Search sorted by post time, or the last pages of a long thread, gives the newest builds directly. Post shapes, pagination, and link markup: `references/thread-and-post-format.md`.
 
+**Denuvo titles break this flow.** Some games cannot be run by patching Steam at all: their clean files are real, but they will not start without a hypervisor crack release bound to the exact build. Detect it (no usable SCS thread, a release marked `EXPERIMENTAL hypervisor-based`, a group name like `-ARTIFACT` or `DenuvOwO`), then report the build, the group and the hardware requirements, and route to `references/denuvo-and-hypervisor.md`. Never present such a download as a portable build.
+
 **4. Rank by uploader, before anything else.** Measure the account's posting volume and tenure, then compare build numbers, then look at what the release is, then at the host. Rules, the measurement recipes, and the staff ban lists are in `references/source-ranking.md`. Never present a banned host, even if it is the only link — say the thread exists and that every link in it is on the staff ban list.
 
 **5. Report, then patch.** Report a short ranked table: uploader with their record, build, release type, host, link, post permalink. Then, if the user wants to play rather than read: `references/patch-and-run.md`.
@@ -62,6 +64,8 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - Do not answer from one post. The newest build is usually a later post in the same thread, and uploaders re-upload when hosts die.
 - Do not run searches in a loop. The board answers `Sorry but you cannot use search at this time` and the wait is minutes; plan two or three queries, not twenty.
 - Do not hand the user a link and stop. The patch step is what makes the download usable, and it is short.
+- Do not present a Denuvo title's download as something that will start. It needs a hypervisor release for that exact build, and running it means turning Windows' virtualization-based security off for the session.
+- Do not mix hypervisor crack files across games or builds. The Denuvo token is bound to one build, and the hypervisor drivers carry game-specific code.
 
 ## What ships here
 
@@ -70,6 +74,7 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - `references/thread-and-post-format.md` — post templates, build stamps, pagination, link markup, permalinks.
 - `references/scs-and-clean-files.md` — the clean-files section: thread anatomy, depots and manifests, title patterns, passwords, extraction, dead links.
 - `references/source-ranking.md` — measuring an uploader's record, build comparison, release types, host quality, and the staff ban lists.
+- `references/denuvo-and-hypervisor.md` — why clean files do not run, what a hypervisor release is, hardware requirements, the security tradeoff, and the Linux path.
 - `references/patch-and-run.md` — Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS, and the traps between them.
 - `references/session-persistence.md` — the rules for storing a login in `.state/`.
 - `templates/csrin_session.py` — copy-and-adapt client: handshake, optional login, fetch, and parse either a topic page (posts, build stamps, links) or a search page (topic id, author, build, excerpt) to JSON. Standard library only; it makes no decisions for you.
