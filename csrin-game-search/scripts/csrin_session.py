@@ -26,6 +26,7 @@ rejected, 4 nothing found, 5 search flood-limited.
 from __future__ import annotations
 
 import argparse
+import atexit
 import getpass
 import json
 import os
@@ -122,6 +123,9 @@ def _throttle() -> None:
         _last_start = time.monotonic()
 
 
+VERBOSE = False
+
+
 def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
              referer: str | None = None) -> tuple[int, str]:
     """Return (status, body). Never raises for HTTP status; raises for transport."""
@@ -137,13 +141,20 @@ def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
     if referer:
         headers["Referer"] = referer
     _throttle()
+    started = time.monotonic()
     req = urllib.request.Request(url, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             _absorb(resp.headers, cookies)
-            return resp.status, resp.read().decode("utf-8", "replace")
+            body = resp.read().decode("utf-8", "replace")
+            if VERBOSE:
+                print(f"# {resp.status} {time.monotonic() - started:5.2f}s "
+                      f"{len(body):7d}B {url}", file=sys.stderr)
+            return resp.status, body
     except urllib.error.HTTPError as exc:
         global _last_retry_after
+        if VERBOSE:
+            print(f"# {exc.code} {time.monotonic() - started:5.2f}s {url}", file=sys.stderr)
         _absorb(exc.headers, cookies)
         try:
             _last_retry_after = float(exc.headers.get("Retry-After") or 0)
@@ -214,13 +225,15 @@ def load_saved_session() -> dict[str, str]:
 
 
 def save_session(cookies: dict[str, str], user: str | None = None) -> Path:
-    """Write the session for the next run, keeping only what stays valid.
+    """Write the session for the next run.
 
-    The phpBB identity cookies survive between runs; ``securitytoken`` does not
-    — it is bound to the client that minted it and expires daily — so writing it
-    to disk would store a credential that is useless tomorrow and stale today.
+    The phpBB cookies survive between runs. ``securitytoken`` is bound to the
+    client that minted it — this machine — and expires daily; keeping it too
+    removes the 401 challenge (measured at 10s) from every following run, and a
+    token that has expired simply earns one more challenge.
     """
-    keep = {k: v for k, v in cookies.items() if k.startswith(COOKIE_PREFIX)}
+    keep = {k: v for k, v in cookies.items()
+            if k.startswith(COOKIE_PREFIX) or k.startswith("securitytoken")}
     payload: dict[str, object] = {
         "cookies": keep,
         "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -487,25 +500,45 @@ def open_session(cookies_arg: str | None) -> dict[str, str]:
     """Cookies for this run: explicit header first, then ``.state/``.
 
     Credentials in ``CSRIN_USER`` / ``CSRIN_PASSWORD`` log in for this run only
-    and are never written anywhere. A saved session that has gone stale answers
-    as a guest rather than with an error, so it is reported once here instead of
-    surfacing later as missing links.
+    and are never written anywhere. No request is spent checking the session up
+    front — that check used to cost a page load on every command; the first real
+    page reports a stale session instead (see ``request_page``).
     """
+    saved = not cookies_arg
     cookies = parse_cookie_header(cookies_arg) if cookies_arg else load_saved_session()
-    had_session = bool(cookies.get(COOKIE_PREFIX + "sid"))
-    status, index = fetch(BASE, cookies)
-    if had_session and status == 200 and not is_logged_in(index):
-        print("warning: the saved session is no longer logged in; "
-              "run 'login --save' or pass --cookies", file=sys.stderr)
     user, password = os.environ.get("CSRIN_USER"), os.environ.get("CSRIN_PASSWORD")
     if user and password:
         login(cookies, user, password)
+    if saved and STATE_FILE.exists():
+        # The token this run mints is written back, so the next run starts clean.
+        atexit.register(lambda: _rewrite_session(cookies))
     return cookies
 
 
+_warned_guest = False
+
+
+def _rewrite_session(cookies: dict[str, str]) -> None:
+    """Persist the refreshed token after a command; silence failures at exit."""
+    try:
+        save_session(cookies)
+    except OSError:
+        pass
+
+
 def request_page(url: str, cookies: dict[str, str]) -> tuple[int, str]:
-    """Fetch one board page, mapping the two failures worth their own exit code."""
+    """Fetch one board page, mapping the two failures worth their own exit code.
+
+    A stale saved session answers as a guest rather than with an error, so the
+    first such page produces one warning. Costs nothing extra: it is the page the
+    command needed anyway.
+    """
+    global _warned_guest
     status, page = fetch(url, cookies, referer=BASE)
+    if status == 200 and cookies and not _warned_guest and not is_logged_in(page):
+        _warned_guest = True
+        print("warning: the session is not logged in; links will be masked. "
+              "Run 'login --save' or pass --cookies.", file=sys.stderr)
     if status == 200 and "cannot use search at this time" in page:
         print("search is flood-limited right now; wait a few minutes or open "
               "a known topic URL", file=sys.stderr)
@@ -827,6 +860,8 @@ def build_parser() -> argparse.ArgumentParser:
         target.add_argument("--cookies", metavar="HEADER",
                             help="cookie header, k=v; k=v (default: .state/session.json)")
         target.add_argument("--json", action="store_true", help="print JSON")
+        target.add_argument("--verbose", action="store_true",
+                            help="log every request to stderr: status, seconds, bytes")
 
     search = sub.add_parser("search", help="title search; lists every matching topic row")
     search.add_argument("query")
@@ -874,16 +909,21 @@ def build_parser() -> argparse.ArgumentParser:
                            help="write the phpBB cookies to .state/session.json (0600)")
     login_cmd.add_argument("--cookies", metavar="HEADER",
                            help="start from this cookie header instead of .state/")
+    login_cmd.add_argument("--verbose", action="store_true",
+                           help="log every request to stderr")
     login_cmd.set_defaults(func=cmd_login)
 
     whoami = sub.add_parser("whoami", help="is the current session logged in?")
     whoami.add_argument("--cookies", metavar="HEADER")
+    whoami.add_argument("--verbose", action="store_true", help="log every request to stderr")
     whoami.set_defaults(func=cmd_whoami)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    global VERBOSE
     args = build_parser().parse_args(argv)
+    VERBOSE = getattr(args, "verbose", False)
     if getattr(args, "json", False) is None:
         args.json = False
     return args.func(args)

@@ -39,16 +39,18 @@ Asking afterwards — after the search, at the end of the task — is worse than
 - `<skill dir>/.state/session.json` — the cookie set, written only after the user said to keep it:
 
   ```json
-  {"cookies": {"csrinru_phpbb3_u": "...", "csrinru_phpbb3_k": "...", "csrinru_phpbb3_sid": "..."},
+  {"cookies": {"csrinru_phpbb3_u": "...", "csrinru_phpbb3_k": "...", "csrinru_phpbb3_sid": "...",
+               "securitytoken": "...", "securitytoken_expiration": "..."},
    "user": "<account name, optional>",
    "saved_at": "<ISO 8601 timestamp, optional>"}
   ```
 
-  Do not store `securitytoken` — it is bound to the client that minted it and
-  expires daily; mint a fresh one on every run (`access-and-session.md`). The
-  shipped client enforces this: `save_session` keeps only keys starting with
-  `csrinru_phpbb3_` and adds `saved_at`. Saving by hand means applying the same
-  filter.
+  The two `securitytoken` cookies are kept on purpose. They are bound to the
+  client that minted them and expire daily, so the file is only useful on the
+  machine that wrote it — but without them every command pays the 401 challenge
+  again. With them, a run starts on the first request; an expired token costs one
+  challenge and is rewritten. The shipped client keeps exactly `csrinru_phpbb3_*`
+  and `securitytoken*` and adds `saved_at`.
 - The skill ships a `.gitignore` that ignores `.state/`, so a skill directory
   inside a git work tree does not stage it.
 

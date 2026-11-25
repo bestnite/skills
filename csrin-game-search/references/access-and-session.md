@@ -25,7 +25,7 @@ None of this is a reason to start without credentials. The handshake gets you a 
 
 ### The token is bound to the client that obtained it
 
-A `securitytoken` minted by one client is rejected when replayed from another: a pasted cookie set containing someone else's `securitytoken` answered 401 from this machine. Mint your own token instead and carry over only the phpBB cookies (`csrinru_phpbb3_*`) from the user — that combination authenticated on the first request, then expired as described below.
+A `securitytoken` minted by one client is rejected when replayed from another: a pasted cookie set containing someone else's `securitytoken` answered 401 from this machine. Mint your own token instead, and treat the stored one as this machine's: `session-persistence.md` keeps it in `.state/` so later runs skip the challenge, which costs about a second and occasionally ten when the board is slow.
 
 ## What a session changes
 
