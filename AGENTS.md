@@ -143,10 +143,10 @@ They apply to every skill directory, including skills nested under platform cate
 ## 6. Scripts stay narrow (narrow script, wide docs)
 
 A skill is not an MCP server. An MCP server owns a capability; a skill hands the
-agent knowledge plus, at most, the code that must be exact. The default is *no
-code* — reach for it only where prose would be unreliable. When code is warranted,
-the question is not "script or snippet" but **"can the user's environment make
-this fail?"**
+agent knowledge plus, at most, the code that must be exact. The default for a
+*decision* is prose — reach for code only where prose would be unreliable. Once
+code is warranted, two questions decide its shape: **"can the user's environment
+make this fail?"** and **"can it run as shipped?"**
 
 - **Scripts compute; documents decide.** Legitimate script territory is
   byte-exact arithmetic (signatures, hashes, encodings), protocol frame
@@ -168,6 +168,12 @@ this fail?"**
   make it fail: pure computation over declared inputs (signing, hashing,
   encoding, format conversion, index arithmetic) behaves identically everywhere.
   Ship those as complete scripts with a real interface.
+- **A complete tool with a fixed interface belongs in `scripts/`.** If it runs as
+  shipped — standard library only, no tool discovery, state resolved from the
+  skill's own directory — it is a script, even when a reader may later adapt it.
+  `templates/` is for code that must be edited before it can run at all:
+  placeholders to fill, paths to choose, a form to re-inspect. Calling a working
+  CLI a "template" hides that it is meant to be run.
 - **When the environment can break it, ship a template instead.** If the script
   has to locate tools or files, pick a transport, find where state lives, cope
   with OS differences, or assume something about the agent runtime, then it is
@@ -197,4 +203,4 @@ this fail?"**
       no capability checks, minimal dependencies.
 - [ ] Environment-sensitivity decided: a finished script only if nothing about the
       user's machine can break it, otherwise a template with the adaptation points
-      marked and explained.
+      marked and explained — and shipped in `scripts/` or `templates/` accordingly.
