@@ -619,7 +619,10 @@ def format_post(post: dict) -> str:
     """Two lines per post: the metadata ranking needs, then a peek at the text."""
     posted = re.sub(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*",
                     "", post["posted"] or "")
-    bits = [f"p{post['post_id']}", posted[:24], post["author"] or "?"]
+    bits = [f"p{post['post_id']}"]
+    if post.get("topic_id"):
+        bits.append(f"t={post['topic_id']}")
+    bits += [posted[:24], post["author"] or "?"]
     if post.get("post_count") is not None:
         bits.append(f"posts={post['post_count']}")
     if post.get("joined"):
@@ -663,13 +666,27 @@ def topic_id_from(target: str) -> str | None:
     return match.group(1) if match else None
 
 
+TOPIC_TITLE_RE = re.compile(r"<title>[^<]*View topic - (.*?)</title>", re.S)
+
+
 def fetch_post(post_id: str, cookies: dict[str, str]) -> dict | None:
-    """One post by id: ``viewtopic.php?p=<id>`` loads the page that holds it."""
+    """One post by id, plus the thread it lives in.
+
+    A permalink says ``p=``; the thread id and title only exist on the page it
+    redirects to, and callers asked for them — one grep for ``t=`` here beats a
+    second request from outside the client.
+    """
     status, html = fetch(f"{BASE}viewtopic.php?p={post_id}", cookies, referer=BASE)
     if status != 200:
         return None
+    topic_ids = re.findall(r"viewtopic\.php\?[^\"']*?[?&](?:amp;)?t=(\d+)", html)
+    title = TOPIC_TITLE_RE.search(html)
     for post in parse_posts(html):
         if post["post_id"] == post_id:
+            if topic_ids:
+                post["topic_id"] = topic_ids[0]
+            if title:
+                post["topic"] = _text(title.group(1))
             return post
     return None
 

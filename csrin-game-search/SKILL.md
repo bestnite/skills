@@ -46,7 +46,7 @@ python3 scripts/check_links.py <primary> <fallback>          # one parallel pass
 
 **0. Get a session before anything else — this skill does not run anonymously.** A guest reads topic pages, but every download link is replaced by `[[Please login to see this link.]]` and the whole clean-files section is hidden, so an anonymous run produces a report nobody can act on and the work is spent twice.
 
-1. **Look first.** Check the skill's own `.state/` directory for a stored session before touching the board.
+1. **Look first.** Check the skill's own `.state/` directory for a stored session. If it is there, start working — the client warns on the first page when the session has gone stale, so a separate `whoami` call is for diagnosing, not for starting.
 2. **No session: stop and ask.** Ask before running a single search, in the user's own language, and say what is needed and why. Three shapes, best first: account name and password (always works), a cookie set from the user's browser (only from the same network), or a browser session the agent can drive.
 3. **No account: send them to register.** Tell them plainly that the board requires an account for links and for the clean-files section, and point at the forum's registration page (`ucp.php?mode=register`). It is free. Then wait — do not search while waiting, and do not "just try a few pages anonymously to see what is there".
 4. **Log in with the shipped client.** `scripts/csrin_session.py` already performs the handshake, the login and the retry logic; running those requests by hand with `curl` re-derives them and usually gets the token or the cookie rotation wrong.
