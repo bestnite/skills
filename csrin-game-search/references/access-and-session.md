@@ -21,11 +21,15 @@ So the whole "anti-bot" surface is:
 
 A browser is not needed, and reaching for one costs minutes and a profile you then have to keep. Use a browser only when the user asks you to drive their existing logged-in browser session.
 
+None of this is a reason to start without credentials. The handshake gets you a *guest* session that reads pages; it does not get you links. Ask for an account first.
+
 ### The token is bound to the client that obtained it
 
 A `securitytoken` minted by one client is rejected when replayed from another: a pasted cookie set containing someone else's `securitytoken` answered 401 from this machine. Mint your own token instead and carry over only the phpBB cookies (`csrinru_phpbb3_*`) from the user — that combination authenticated on the first request, then expired as described below.
 
 ## What a session changes
+
+Anonymous access is a diagnostic, never an operating mode: use it to understand why a request fails, not to run a task. The skill's workflow asks for a session up front (step 0 in `SKILL.md`) and does not search while it waits.
 
 | | Anonymous | Logged in |
 |---|---|---|
@@ -35,7 +39,7 @@ A `securitytoken` minted by one client is rejected when replayed from another: a
 | `f=22 Steam Content Sharing` | "Please register or log in to view this forum." | readable |
 | `feed.php` | 200, links masked | 200, links masked |
 
-`f=22` hides its whole subtree from anonymous clients, and `viewtopic.php?t=<id>` for a topic inside it answers `The requested topic does not exist` — the same answer a deleted topic gives, so the two are indistinguishable without a session. Do not conclude a game has no clean-files thread until you have looked with a session.
+`f=22` hides its whole subtree from anonymous clients, and `viewtopic.php?t=<id>` for a topic inside it answers `The requested topic does not exist` — the same answer a deleted topic gives, so the two are indistinguishable without a session. Do not conclude a game has no clean-files thread until you have looked with a session, and do not start a task without one: every link a guest sees is a placeholder, so the search has to be repeated afterwards.
 
 ## Logging in
 

@@ -24,11 +24,19 @@ The board is phpBB3 at `https://cs.rin.ru/forum/`. It is not Cloudflare-gated an
 | `Steam Content Sharing` (`f=22`) | hidden — "Please register or log in" | readable |
 | Atom feeds (`feed.php`) | readable, links still masked | readable |
 
-So: **anonymous browsing answers "does it exist, which build, who posted it" but never yields a URL.** Any task that ends in a downloadable link needs a session. Say that to the user early instead of returning a page of placeholders.
+The table exists to explain *why* a session is mandatory, not to offer a degraded mode. **This skill does not search anonymously.** Guest reading shows that a thread exists and which build it names, but never yields a URL, so a guest run cannot finish the job — ask for credentials first (step 0) instead of returning placeholders.
 
 ## Workflow
 
-**0. Establish the session.** Cookie string, username/password, or nothing (degraded). A pasted cookie only authenticates when the agent's requests leave from the same network as the user's browser — the board's security token and session are bound to the client that created them. When that cannot be arranged, ask for credentials and log in from the client that will make the requests; that is the path that always works. Details and the failure table: `references/access-and-session.md`. Do not write a session anywhere except the skill's own `.state/`, which is gitignored.
+**0. Get a session before anything else — this skill does not run anonymously.** A guest reads topic pages, but every download link is replaced by `[[Please login to see this link.]]` and the whole clean-files section is hidden, so an anonymous run produces a report nobody can act on and the work is spent twice.
+
+1. **Look first.** Check the skill's own `.state/` directory for a stored session before touching the board.
+2. **No session: stop and ask.** Ask before running a single search, in the user's own language, and say what is needed and why. Three shapes, best first: account name and password (always works), a cookie set from the user's browser (only from the same network), or a browser session the agent can drive.
+3. **No account: send them to register.** Tell them plainly that the board requires an account for links and for the clean-files section, and point at the forum's registration page (`ucp.php?mode=register`). It is free. Then wait — do not search while waiting, and do not "just try a few pages anonymously to see what is there".
+4. **Log in with the shipped client.** `templates/csrin_session.py` already performs the handshake, the login and the retry logic; running those requests by hand with `curl` re-derives them and usually gets the token or the cookie rotation wrong.
+5. **Then ask about persistence.** Once the login is verified, ask whether to keep the session in `.state/session.json` (`0600`, gitignored) or to use it once and drop it. Details: `references/session-persistence.md`.
+
+A pasted cookie only authenticates when the agent's requests leave from the same network as the user's browser — the board's security token and session are bound to the client that created them. When that cannot be arranged, ask for credentials and log in from the client that will make the requests; that is the path that always works. Details and the failure table: `references/access-and-session.md`. Do not write a session anywhere except the skill's own `.state/`, which is gitignored.
 
 **1. Resolve the game identity before searching.** The English store name is what the board uses, and the AppID is a better search key than the name. Use the Steam store search API (`https://store.steampowered.com/api/storesearch/?term=<name>&l=english&cc=us`) to turn a title into `{appid, canonical name}`; if the user gave an AppID, use `appdetails` to get the name. Never search a translated or abbreviated title first — the board indexes the English Steam name. That name is the usual key, not a guaranteed one: when the title query comes back empty, try the AppID, then the series or developer name.
 

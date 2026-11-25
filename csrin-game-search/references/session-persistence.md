@@ -24,11 +24,19 @@ same containment rules.
 Do not scan the machine for browser cookie databases. A cookie store on disk is
 the browser's, not yours, and reading it is a decision the user has to make.
 
+## Ask at the moment the credential arrives
+
+The question belongs in the same reply that acknowledges the credentials, not later and not silently:
+
+> Session received. Keep it in this skill's `.state/` so the next run does not ask again, or use it once and drop it?
+
+Asking afterwards — after the search, at the end of the task — is worse than useless: the user has already paid the cost of pasting it, and the next run asks again. Ask once, record the answer, and do not re-ask on every run while the session still works.
+
 ## Layout
 
 - `<skill dir>` is the directory this skill's `SKILL.md` was loaded from. Resolve
   it at runtime; its absolute path differs per install.
-- `<skill dir>/.state/session.json` — the cookie set:
+- `<skill dir>/.state/session.json` — the cookie set, written only after the user said to keep it:
 
   ```json
   {"cookies": {"csrinru_phpbb3_u": "...", "csrinru_phpbb3_k": "...", "csrinru_phpbb3_sid": "..."},

@@ -8,6 +8,7 @@ Link hunting alone is a half-answer. A clean Steam build that will not start is 
 
 ## What it covers
 
+- **An account, up front** — the skill does not search anonymously: links are masked and the clean-files section is hidden for guests, so it asks for credentials before the first query, points a user without an account at the free registration page, and offers to keep the session in `.state/` (0600, gitignored) once the login works
 - **The board's access model** — the 401 cookie handshake that replaces the usual bot wall, what an anonymous client can and cannot see, and why a downloaded link needs a session at all
 - **Search that works** — the phpBB query parameters, the AppID-as-keyword trick that finds the newest build in one query, post-time sorting, pagination, and the flood control that punishes looping
 - **Thread reading** — the two post templates (game card and upload post), build-stamp extraction, permalinks, quote and signature traps, the author cell that carries an uploader's tenure and post count, and the two link states the board renders
