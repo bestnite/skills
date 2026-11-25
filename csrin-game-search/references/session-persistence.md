@@ -45,7 +45,10 @@ Asking afterwards — after the search, at the end of the task — is worse than
   ```
 
   Do not store `securitytoken` — it is bound to the client that minted it and
-  expires daily; mint a fresh one on every run (`access-and-session.md`).
+  expires daily; mint a fresh one on every run (`access-and-session.md`). The
+  shipped client enforces this: `save_session` keeps only keys starting with
+  `csrinru_phpbb3_` and adds `saved_at`. Saving by hand means applying the same
+  filter.
 - The skill ships a `.gitignore` that ignores `.state/`, so a skill directory
   inside a git work tree does not stage it.
 

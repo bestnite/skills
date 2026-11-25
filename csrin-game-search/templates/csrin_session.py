@@ -26,6 +26,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from html import unescape
 from pathlib import Path
 
@@ -43,6 +44,9 @@ USER_AGENT = (
 # ADAPT: where a saved session may live. The default is this skill's own .state/
 # directory, which the skill gitignores; anything else is the user's call.
 STATE_FILE = Path(__file__).resolve().parent.parent / ".state" / "session.json"
+
+# The phpBB identity cookies; ``securitytoken`` is deliberately not in this set.
+COOKIE_PREFIX = "csrinru_phpbb3_"
 
 TOKEN_RE = re.compile(r"securitytoken=([A-Za-z0-9_-]{10,})")
 TOKEN_EXP_RE = re.compile(r"securitytoken_expiration=(\d+)")
@@ -79,7 +83,7 @@ def _absorb(headers, cookies: dict[str, str]) -> None:
         name, _, value = raw.partition("=")
         value = value.split(";", 1)[0].strip()
         name = name.strip()
-        if name.startswith("csrinru_phpbb3_") or name.startswith("securitytoken"):
+        if name.startswith(COOKIE_PREFIX) or name.startswith("securitytoken"):
             cookies[name] = value
 
 
@@ -155,6 +159,28 @@ def load_saved_session() -> dict[str, str]:
     if not isinstance(raw, dict):
         return {}
     return {k: str(v) for k, v in raw.items()}
+
+
+def save_session(cookies: dict[str, str], user: str | None = None) -> Path:
+    """Write the session for the next run, keeping only what stays valid.
+
+    The phpBB identity cookies survive between runs; ``securitytoken`` does not
+    — it is bound to the client that minted it and expires daily — so writing it
+    to disk would store a credential that is useless tomorrow and stale today.
+    """
+    keep = {k: v for k, v in cookies.items() if k.startswith(COOKIE_PREFIX)}
+    payload: dict[str, object] = {
+        "cookies": keep,
+        "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    if user:
+        payload["user"] = user
+    STATE_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload, indent=2) + "\n")
+    tmp.chmod(0o600)
+    tmp.replace(STATE_FILE)
+    return STATE_FILE
 
 
 def login(cookies: dict[str, str], username: str, password: str) -> dict[str, str]:
@@ -402,7 +428,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--text", action="store_true", help="print post text only")
     parser.add_argument("--max-posts", type=int, default=None)
     parser.add_argument("--save-session", action="store_true",
-                        help="write the cookie set to .state/session.json (0600)")
+                        help="write the phpBB cookies to .state/session.json (0600); securitytoken is never stored")
     args = parser.parse_args(argv)
 
     cookies: dict[str, str] = {}
@@ -414,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         cookies = load_saved_session()
 
-    had_session = bool(cookies.get("csrinru_phpbb3_sid"))
+    had_session = bool(cookies.get(COOKIE_PREFIX + "sid"))
     _, index = fetch(BASE, cookies)
     if had_session and not is_logged_in(index):
         # A stale phpBB session answers as a guest, not with an error.
@@ -433,11 +459,8 @@ def main(argv: list[str] | None = None) -> int:
               "or use a known topic URL instead", file=sys.stderr)
         return 5
     if args.save_session and args.cookies:
-        STATE_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        tmp = STATE_FILE.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"cookies": cookies}, indent=2))
-        tmp.chmod(0o600)
-        tmp.replace(STATE_FILE)
+        saved = save_session(cookies, user)
+        print(f"session written to {saved}", file=sys.stderr)
 
     is_search = "Search found" in page or "Search these results" in page
     if is_search and 'class="topictitle"' in page and 'name="p' not in page:
