@@ -77,15 +77,15 @@ It is one search either way, so the cost per candidate is one query. Flood contr
 `templates/csrin_session.py` ships two modes that collapse the usual sequence:
 
 ```
-python csrin_session.py --find "<English name>" [--topics 2] [--posts 15]
-python csrin_session.py 'viewtopic.php?t=<id>' --last [--posts 15]
+python csrin_session.py search "<English name>" [--open 2] [--pages 3] [--posts 15]
+python csrin_session.py topic <id-or-url> [--pages 3] [--posts 15]
 ```
 
-`--find` runs the title search and lists every matching row; with `--topics N` it also opens the newest pages of the first N topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `--last` does the same for one topic over its last three pages (`--pages N`): the newest page costs one request, because phpBB clamps `start=999999` to the final page, and the two before it follow from its pagination links.
+`search` runs the title search and lists every matching row; with `--open N` it also opens the newest pages of the first N topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `topic` does the same for one thread over its last three pages (`--pages N`): the newest page costs one request, because phpBB clamps `start=999999` to the final page, and the two before it follow from its pagination links.
 
 Cost is one search request plus `opened × pages` page requests (opened defaults to 0, capped at 6; pages default 3), whatever the query returns — forty-one matches list the same as five. The tool prints the arithmetic before it fetches.
 
- a page of forty-one matching topics is still one request, and each opened topic is one more — never a page-by-page walk. `--topics N` (default 0, capped at 6) is the only lever, and the opened pages run in parallel. The usual run is therefore two commands: survey with `--find`, then open the chosen thread with `--last`. `--list N` trims the printed rows (0, the default, prints every row on the page, which is what keeps a `Steam Content Sharing` thread from hiding under a dozen same-name games). `--sort time` orders results by newest topic instead of relevance.
+ a page of forty-one matching topics is still one request, and each opened topic is one more — never a page-by-page walk. `--open N` (default 0, capped at 6) is the only lever, and the opened pages run in parallel. The usual run is therefore two commands: survey with `search`, then open the chosen thread with `topic`. `search --list N` trims the printed rows (0, the default, prints every row on the page, which is what keeps a `Steam Content Sharing` thread from hiding under a dozen same-name games). `search --sort time` orders results by newest topic instead of relevance.
 
 They exist to save round trips, not to decide anything: the result is raw material for the judgement in `source-ranking.md`. A page that turns out to be chatter is a normal outcome, and the next step is one page further back or another topic.
 
