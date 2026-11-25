@@ -73,7 +73,7 @@ Normalise all three to the same two things: your own fresh `securitytoken` pair,
 
 The board sets `csrinru_phpbb3_u`, `_k` and `_sid` on **every** response, and `_sid` changes each time — three consecutive guest requests produced three different session ids. A browser keeps working because it stores each rotation. A client that pastes one cookie header and ignores `Set-Cookie` authenticates on its first request and answers as a guest from the second on. That looks exactly like an expired cookie and is not: it is the client dropping the rotation.
 
-So keep a jar and merge every `Set-Cookie` into it (`templates/csrin_session.py` does this in `_absorb`). With the rotation followed, a live session stays live; without it, one request is all you get.
+So keep a jar and merge every `Set-Cookie` into it (`scripts/csrin_session.py` does this in `_absorb`). With the rotation followed, a live session stays live; without it, one request is all you get.
 
 A pasted cookie can still be stale — the user's own browser rotated it after copying. Verify on the first response:
 

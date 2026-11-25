@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""CS.RIN.RU client template: handshake, optional login, fetch, parse posts to JSON.
+"""CS.RIN.RU client: handshake, optional login, search topics, digest a thread tail.
 
-Copy this file, then edit only the spots marked ``ADAPT``. It is a template, not a
-fixed tool: the cookie source, the user agent and the session path are yours to
-decide, because they depend on the machine and the account, not on the board.
+It runs as shipped. The spots marked ``ADAPT`` are the ones that change when the
+board changes — a hidden login field, a user agent that starts getting refused —
+not settings for a particular machine: the session path is resolved from this
+file's location and the cookie source is a flag or an environment variable.
 
 Standard library only. Nothing is probed, nothing is written unless you pass
-``--save-session``, and no request is made that the URL does not name.
+``--save`` on ``login``, and no request is made that the URL does not name.
 
 Usage:
     csrin_session.py search "<English game name>"     # one request: every matching topic row

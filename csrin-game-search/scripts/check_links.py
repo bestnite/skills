@@ -49,8 +49,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 # ADAPT: an ordinary desktop user agent. Some hosts serve a challenge page to
-# anything that looks like a script, which would read as "dead" if not for the
-# BLOCKED/UNVERIFIED split below.
+# anything that looks like a script, which would be read as "blocked" — correct,
+# but the verdict then depends on this string rather than on the file.
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"

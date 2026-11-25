@@ -45,18 +45,18 @@ npx skills add https://git.nite07.com/nite/skills.git -g -s csrin-game-search
 ## 结构
 
 ```text
-SKILL.md                            # 入口：三阶段流程与排序摘要
+SKILL.md                            # 入口：工作流与排序摘要
 references/access-and-session.md    # 握手、登录表单、Cookie 形式、游客权限矩阵、故障对照表
 references/search-recipes.md        # 查询参数、AppID 检索、排序、限流、回退方案
 references/thread-and-post-format.md# 帖子模板、Build 号、分页、链接标签
-references/source-ranking.md        # 上传者记录、Build 对比、资源类型、网盘质量、封禁名单
+references/source-ranking.md        # 上传者记录、Build 对比、资源类型、网盘质量
 references/scs-and-clean-files.md   # f=22：主题、depot/manifest、密码、解压
 references/denuvo-and-hypervisor.md # D 加密：hypervisor 版本、硬件门槛、安全代价
-references/link-verification.md    # 三种判定、各主机行为、为什么不能只给一条
-templates/check_links.py           # 验活脚本：按主机判定、仅标准库
+references/link-verification.md     # 四种判定、各主机行为、为什么不能只给一条
 references/patch-and-run.md         # Steamless、Unsteam、GBE Fork、uc-online2、Nemirtingas EOS
 references/session-persistence.md   # Cookie 可存哪、怎么撤销
-templates/csrin_session.py          # 可复制改写的客户端：握手、可选登录、取页、解析
+scripts/csrin_session.py            # search / topic / fetch / login / whoami
+scripts/check_links.py              # 链接验活：ALIVE / DEAD / BLOCKED / UNVERIFIED
 ```
 
 ## 风险提示

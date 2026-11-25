@@ -45,18 +45,18 @@ Manual installation: copy this directory into the skills directory your agent re
 ## Structure
 
 ```text
-SKILL.md                            # entry point: the three-phase workflow and the ranking summary
+SKILL.md                            # entry point: the workflow and the ranking summary
 references/access-and-session.md    # handshake, login form, cookie formats, guest matrix, failure table
 references/search-recipes.md        # query parameters, AppID search, sorting, throttling, fallbacks
 references/thread-and-post-format.md# post templates, build stamps, pagination, link markup
-references/source-ranking.md        # uploader records, build comparison, release types, host quality, ban lists
+references/source-ranking.md        # uploader records, build comparison, release types, host quality
 references/scs-and-clean-files.md   # f=22: threads, depots/manifests, passwords, extraction
 references/denuvo-and-hypervisor.md # Denuvo: hypervisor releases, requirements, security tradeoff
-references/link-verification.md    # verdicts, per-host behaviour, why one link is not enough
-templates/check_links.py           # liveness checker, host-aware, standard library
+references/link-verification.md     # verdicts, per-host behaviour, why one link is not enough
 references/patch-and-run.md         # Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS
 references/session-persistence.md   # where a cookie may live, and how to revoke it
-templates/csrin_session.py          # copy-and-adapt client: handshake, optional login, fetch, parse
+scripts/csrin_session.py            # search / topic / fetch / login / whoami
+scripts/check_links.py              # link liveness: ALIVE / DEAD / BLOCKED / UNVERIFIED
 ```
 
 ## Warning

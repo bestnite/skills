@@ -74,7 +74,7 @@ It is one search either way, so the cost per candidate is one query. Flood contr
 
 ## One call instead of six
 
-`templates/csrin_session.py` ships two modes that collapse the usual sequence:
+`scripts/csrin_session.py` ships two modes that collapse the usual sequence:
 
 ```
 python csrin_session.py search "<English name>" [--open 2] [--pages 3] [--posts 15]
