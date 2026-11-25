@@ -117,6 +117,14 @@ So budget searches per task:
 
 Do not loop, and never fan out one search per forum to "be thorough".
 
+The shipped client paces itself and treats the two limits differently:
+
+- **Request starts are spaced by 250 ms** (`PACING`), so the four parallel page fetches of a thread tail arrive as a stagger rather than a burst. This is what keeps a normal run under the limit at all.
+- **An HTTP 429** means the host is throttling: it waits once (the `Retry-After` header when present, 2 s otherwise, never more than 5 s), retries, and gives up with status 429 if refused again. The run reports that instead of hanging.
+- **The board's flood page** (`Sorry but you cannot use search at this time`) is not a 429 — it arrives as a 200 with that sentence in it. The client maps it to exit code 5, and the right response is to stop searching and read threads by URL, which are not search.
+
+A retry that is not throttling-related is not a strategy: on a 403 or a timeout, report it rather than pinging the host until it relents.
+
 ## When search is unavailable
 
 In order of cost:

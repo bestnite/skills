@@ -9,22 +9,28 @@ Standard library only. Nothing is probed, nothing is written unless you pass
 ``--save-session``, and no request is made that the URL does not name.
 
 Usage:
-    python csrin_session.py --find "<English game name>"      # one search request: every matching row
-    python csrin_session.py 'viewtopic.php?t=<topic>' --last  # digest one thread's newest page
-    python csrin_session.py 'viewtopic.php?f=10&t=<topic>' --json
-    python csrin_session.py 'search.php?keywords=<appid>&sr=posts' --text
-    CSRIN_USER=name CSRIN_PASSWORD=secret python csrin_session.py 'index.php'
+    csrin_session.py search "<English game name>"     # one request: every matching topic row
+    csrin_session.py topic 102530                     # 3 pages of that thread's tail
+    csrin_session.py fetch 'search.php?keywords=<appid>&sr=posts'
+    csrin_session.py login --save                     # credentials from env or prompt
+    csrin_session.py whoami                           # is the session still logged in?
 
-Exit codes: 0 ok, 2 board rejected the request, 3 login failed, 4 no posts found.
+    csrin_session.py search --help                    # every subcommand explains itself
+
+Exit codes: 0 ok, 1 not logged in, 2 request failed or bad argument, 3 login
+rejected, 4 nothing found, 5 search flood-limited.
 """
 
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
 import re
 import sys
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -50,6 +56,17 @@ STATE_FILE = Path(__file__).resolve().parent.parent / ".state" / "session.json"
 
 # One request may not hang the whole run: a slow host costs seconds, not minutes.
 TIMEOUT = 15
+
+# Request pacing. The board is a hobby server and answers 429 when hammered, so
+# request starts are spaced instead of fired in a burst; a 429 waits, it does not
+# fail. Measured on 2026-11-25: four parallel page fetches stayed under the limit
+# with this spacing.
+PACING = 0.25          # seconds between two request starts
+RETRY_AFTER = 2.0      # default wait for a 429 that carries no Retry-After
+RETRY_AFTER_CAP = 5.0  # a host that asks for longer than this is not worth the wait
+_rate_lock = threading.Lock()
+_last_start = 0.0
+_last_retry_after = 0.0
 
 # The phpBB identity cookies; ``securitytoken`` is deliberately not in this set.
 COOKIE_PREFIX = "csrinru_phpbb3_"
@@ -93,6 +110,16 @@ def _absorb(headers, cookies: dict[str, str]) -> None:
             cookies[name] = value
 
 
+def _throttle() -> None:
+    """Space request starts so parallel workers do not burst at the board."""
+    global _last_start
+    with _rate_lock:
+        wait = PACING - (time.monotonic() - _last_start)
+        if wait > 0:
+            time.sleep(wait)
+        _last_start = time.monotonic()
+
+
 def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
              referer: str | None = None) -> tuple[int, str]:
     """Return (status, body). Never raises for HTTP status; raises for transport."""
@@ -107,13 +134,19 @@ def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
         headers["Cookie"] = _cookie_header(cookies)
     if referer:
         headers["Referer"] = referer
+    _throttle()
     req = urllib.request.Request(url, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             _absorb(resp.headers, cookies)
             return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
+        global _last_retry_after
         _absorb(exc.headers, cookies)
+        try:
+            _last_retry_after = float(exc.headers.get("Retry-After") or 0)
+        except (TypeError, ValueError):
+            _last_retry_after = 0.0
         return exc.code, exc.read().decode("utf-8", "replace")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         # Slow board or a dropped connection: report as status 0 so fetch retries.
@@ -133,8 +166,8 @@ def _mint_token(body: str, cookies: dict[str, str]) -> bool:
 
 def fetch(url: str, cookies: dict[str, str], data: bytes | None = None,
           referer: str | None = None) -> tuple[int, str]:
-    """GET/POST with the board's two gates handled: the 401 cookie challenge and
-    the rotating session cookie.
+    """GET/POST with the board's gates handled: the 401 cookie challenge, the
+    rotating session cookie, and a 429 that is waited out rather than failed.
 
     The challenge is not a one-time gate: it reappears on some requests, so every
     response is checked for it and answered with a fresh token before one retry.
@@ -142,9 +175,20 @@ def fetch(url: str, cookies: dict[str, str], data: bytes | None = None,
     never replay the user's.
     """
     status, body = 0, ""
+    rate_hits = 0
     for _ in range(4):
         status, body = _request(url, cookies, data=data, referer=referer)
         if status == 0:
+            continue
+        if status == 429:
+            # One wait, then give up: a host still refusing after a pause is a
+            # host to retry later, not to stall the run for.
+            if rate_hits:
+                return status, body
+            rate_hits += 1
+            wait = min(_last_retry_after or RETRY_AFTER, RETRY_AFTER_CAP)
+            print(f"rate limited (429); waiting {wait:.0f}s", file=sys.stderr)
+            time.sleep(wait)
             continue
         if status != 401 and "CS RIN - Security check" not in body[:4000]:
             return status, body
@@ -424,14 +468,61 @@ def parse_search(html: str, limit: int | None = None) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
-# one-shot lookups: one call, raw material, no decisions
+# session handling
+# --------------------------------------------------------------------------- #
+
+def parse_cookie_header(value: str) -> dict[str, str]:
+    """``k=v; k=v`` to a dict — the shape a browser's copy-cookies gives."""
+    cookies: dict[str, str] = {}
+    for part in value.split(";"):
+        if "=" in part:
+            key, val = part.split("=", 1)
+            cookies[key.strip()] = val.strip()
+    return cookies
+
+
+def open_session(cookies_arg: str | None) -> dict[str, str]:
+    """Cookies for this run: explicit header first, then ``.state/``.
+
+    Credentials in ``CSRIN_USER`` / ``CSRIN_PASSWORD`` log in for this run only
+    and are never written anywhere. A saved session that has gone stale answers
+    as a guest rather than with an error, so it is reported once here instead of
+    surfacing later as missing links.
+    """
+    cookies = parse_cookie_header(cookies_arg) if cookies_arg else load_saved_session()
+    had_session = bool(cookies.get(COOKIE_PREFIX + "sid"))
+    status, index = fetch(BASE, cookies)
+    if had_session and status == 200 and not is_logged_in(index):
+        print("warning: the saved session is no longer logged in; "
+              "run 'login --save' or pass --cookies", file=sys.stderr)
+    user, password = os.environ.get("CSRIN_USER"), os.environ.get("CSRIN_PASSWORD")
+    if user and password:
+        login(cookies, user, password)
+    return cookies
+
+
+def request_page(url: str, cookies: dict[str, str]) -> tuple[int, str]:
+    """Fetch one board page, mapping the two failures worth their own exit code."""
+    status, page = fetch(url, cookies, referer=BASE)
+    if status == 200 and "cannot use search at this time" in page:
+        print("search is flood-limited right now; wait a few minutes or open "
+              "a known topic URL", file=sys.stderr)
+        return 5, page
+    if status != 200:
+        print(f"request failed: {status}", file=sys.stderr)
+        return 2, page
+    return 0, page
+
+
+# --------------------------------------------------------------------------- #
+# board queries
 # --------------------------------------------------------------------------- #
 
 def search_url(query: str, sort: str | None = None) -> str:
     """Topic-title search — the cheapest useful first query.
 
-    ``sort="time"`` asks for newest-started topics first, which is the only
-    ordering that separates a game from a dozen similarly named ones.
+    ``sort="time"`` asks for the newest topics first, which is the only ordering
+    that separates one game from a dozen similarly named ones.
     """
     params = {
         "keywords": query,
@@ -446,12 +537,12 @@ def search_url(query: str, sort: str | None = None) -> str:
 
 
 def fetch_last_page(topic_id: str, cookies: dict[str, str]) -> tuple[int, str]:
-    """One request for the newest page.
+    """One request for a topic's newest page.
 
-    phpBB clamps an offset past the end of the topic, so asking for a huge
-    ``start`` returns the last page without paging through the thread first.
-    Verified on 2026-11-25 against a 44-page topic: ``start=99999`` and the true
-    last offset returned the same posts.
+    phpBB clamps an offset past the end, so a huge ``start`` returns the final
+    page without paging through the thread first. Verified on 2026-11-25 against
+    a 44-page topic: ``start=99999`` and the true last offset returned the same
+    posts.
     """
     url = f"{BASE}viewtopic.php?t={topic_id}&start=999999"
     return fetch(url, cookies, referer=BASE)
@@ -459,18 +550,16 @@ def fetch_last_page(topic_id: str, cookies: dict[str, str]) -> tuple[int, str]:
 
 def topic_tail(topic_id: str, cookies: dict[str, str],
                pages: int = 3) -> tuple[int, list[tuple[int, str]]]:
-    """The last `pages` pages of a topic, oldest first, in 1 + (pages-1) requests.
+    """The last ``pages`` pages of a topic, oldest first, in 1 + (pages-1) requests.
 
-    The newest page is fetched by asking for an offset past the end, which phpBB
-    clamps to the final page; its pagination then gives the real offset, and the
-    pages before it are 15 posts apart. A tail of three pages exists because the
-    last page of a long thread is often people talking about the release rather
-    than the release itself.
+    A tail of three exists because the newest page of a live thread is often
+    people discussing the release rather than the release itself. The final page
+    is one request; its pagination supplies the offsets of the two before it.
     """
     status, first = fetch_last_page(topic_id, cookies)
     if status != 200:
         return status, []
-    # Pagination links arrive entity-escaped: t=68085&amp;start=645.
+    # Pagination links arrive entity-escaped: viewtopic.php?t=68085&amp;start=645.
     starts = [int(value) for value in
               re.findall(r"(?:&amp;|&|\?)start=(\d+)", first)]
     last = max(starts) if starts else 0
@@ -479,19 +568,20 @@ def topic_tail(topic_id: str, cookies: dict[str, str],
     todo = [offset for offset in offsets if offset != last]
     if todo:
         with ThreadPoolExecutor(max_workers=min(4, len(todo))) as pool:
-            results = pool.map(
-                lambda offset: (offset, fetch(f"{BASE}viewtopic.php?t={topic_id}&start={offset}",
-                                              cookies, referer=BASE)),
+            fetched = pool.map(
+                lambda offset: (offset, fetch(
+                    f"{BASE}viewtopic.php?t={topic_id}&start={offset}",
+                    cookies, referer=BASE)),
                 todo,
             )
-            for offset, (status, html) in results:
+            for offset, (status, html) in fetched:
                 if status == 200:
                     found[offset] = html
     return 200, [(offset, found[offset]) for offset in offsets if offset in found]
 
 
 def format_post(post: dict) -> str:
-    """One post as two lines: the metadata the ranking needs, then a text peek."""
+    """Two lines per post: the metadata ranking needs, then a peek at the text."""
     posted = re.sub(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*",
                     "", post["posted"] or "")
     bits = [f"p{post['post_id']}", posted[:24], post["author"] or "?"]
@@ -509,209 +599,226 @@ def format_post(post: dict) -> str:
         bits.append(f"unsafe={unsafe}")
     if post.get("masked_links"):
         bits.append("masked")
-    text = " ".join(post["text"].split())[:240]
-    return "  ".join(bits) + "\n      " + text
+    return "  ".join(bits) + "\n      " + " ".join(post["text"].split())[:240]
 
 
-def find(query: str, cookies: dict[str, str], topics_n: int = 0,
-         posts_n: int = 15, list_n: int = 0, sort: str | None = None,
-         pages: int = 3) -> int:
-    """Search by title, then print the newest page of the top topics.
-
-    It gathers; it does not decide. No topic is called the best, nothing is
-    filtered for "looks like a release", and a short page is reported as short —
-    reading further back, or opening another topic, stays the agent's call.
-    """
-    status, page = fetch(search_url(query, sort), cookies, referer=BASE)
-    if status != 200:
-        print(f"search failed: {status}", file=sys.stderr)
-        return 2
-    if "cannot use search at this time" in page:
-        print("search is flood-limited right now; wait a few minutes or open "
-              "a known topic URL", file=sys.stderr)
-        return 5
-    total = search_total(page)
-    rows = parse_topics(page, None)
-    # Every row on the page is printed by default: a clean-files thread can sit
-    # below a dozen same-name games, and the forum column is how it is spotted.
-    topics = rows[:list_n] if list_n > 0 else rows
-    print(f"search: {query!r} -> {total if total is not None else '?'} matches; "
-          f"{len(rows)} rows on this page, showing {len(topics)}")
-    if total is not None and total > len(rows):
-        print(f"  note: {total - len(rows)} more matches are on later result pages; "
-              f"narrow it with the AppID or the exact English name")
-    if len(rows) > len(topics):
-        print(f"  note: {len(rows) - len(topics)} rows hidden by --list")
-    if not topics:
-        print("no topic rows: try the AppID, the untranslated English name, or "
-              "the series name", file=sys.stderr)
-        return 4
-    for index, topic in enumerate(topics, 1):
-        print(f"  {index}. t={topic['topic_id']}  [{topic['forum']}]  {topic['title']}")
-    # Only the first `topics_n` rows are opened — the rest are listed and left
-    # alone. Cost is 1 + opened × pages, whatever the query returned.
-    chosen = topics[:max(0, min(topics_n, 6))]
-    print(f"  opening {len(chosen)} of {len(topics)} topics, {pages} page(s) each "
-          f"= 1 search + {len(chosen) * max(1, pages)} page requests")
-    if not chosen:
-        print("  next: pick a t=<id> and run: "
-              "csrin_session.py 'viewtopic.php?t=<id>' --last")
-        return 0
-    with ThreadPoolExecutor(max_workers=max(1, min(4, len(chosen)))) as pool:
-        tails = list(pool.map(lambda t: topic_tail(t["topic_id"], cookies, pages), chosen))
-    for topic, (status, tail) in zip(chosen, tails):
-        print(f"\n--- t={topic['topic_id']} (status {status}, {len(tail)} page(s)): {topic['title']}")
-        for offset, html in tail:
-            print(f"  [start={offset}]")
-            for post in parse_posts(html, posts_n):
-                print(format_post(post))
-    return 0
+def search_rows(page: str) -> tuple[int | None, list[dict]]:
+    """Every topic row on one search page, with the board's stated total."""
+    return search_total(page), parse_topics(page, None)
 
 
-def last_page(url: str, cookies: dict[str, str], posts_n: int = 15,
-              pages: int = 3) -> int:
-    """Digest the newest page of one topic URL."""
-    match = re.search(r"[?&]t=(\d+)", url)
-    if not match:
-        print("--last needs a viewtopic.php?t=<id> URL", file=sys.stderr)
-        return 2
-    status, tail = topic_tail(match.group(1), cookies, pages)
-    if status != 200:
-        print(f"request failed: {status}", file=sys.stderr)
-        return 2
-    for offset, html in tail:
-        print(f"[start={offset}]")
-        for post in parse_posts(html, posts_n):
+def topic_id_from(target: str) -> str | None:
+    """Accept ``t=123``, ``viewtopic.php?t=123``, or a bare id."""
+    match = re.search(r"[?&]t=(\d+)", target) or re.fullmatch(r"(?:t=)?(\d+)", target.strip())
+    return match.group(1) if match else None
+
+
+def topic_digest(topic_id: str, cookies: dict[str, str], pages: int,
+                 posts_n: int) -> dict:
+    """Structured tail: the pages and their posts, ready for text or JSON."""
+    status, tail = topic_tail(topic_id, cookies, pages)
+    return {
+        "status": status,
+        "topic_id": topic_id,
+        "pages": [{"start": start, "posts": parse_posts(html, posts_n)}
+                  for start, html in tail],
+    }
+
+
+def print_digest(digest: dict, label: str = "") -> None:
+    head = f"--- t={digest['topic_id']}"
+    if label:
+        head += f"  {label}"
+    print(f"{head}  (status {digest['status']}, {len(digest['pages'])} page(s))")
+    for page in digest["pages"]:
+        print(f"  [start={page['start']}]")
+        for post in page["posts"]:
             print(format_post(post))
-    return 0
+
+
+# --------------------------------------------------------------------------- #
+# commands
+# --------------------------------------------------------------------------- #
+
+def cmd_search(args) -> int:
+    cookies = open_session(args.cookies)
+    code, page = request_page(search_url(args.query, args.sort), cookies)
+    if code:
+        return code
+    total, rows = search_rows(page)
+    shown = rows[:args.list] if args.list > 0 else rows
+    opened = shown[:max(0, min(args.open, 6))]
+    if not args.json:
+        print(f"search: {args.query!r} -> {total if total is not None else '?'} matches; "
+              f"{len(rows)} rows on this page, showing {len(shown)}")
+        if total is not None and total > len(rows):
+            print(f"  note: {total - len(rows)} more matches are on later result pages; "
+                  f"narrow with the AppID or the exact English name")
+        if len(rows) > len(shown):
+            print(f"  note: {len(rows) - len(shown)} rows hidden by --list")
+        for index, row in enumerate(shown, 1):
+            print(f"  {index}. t={row['topic_id']}  [{row['forum']}]  {row['title']}")
+        print(f"  opening {len(opened)} of {len(shown)} topics, {args.pages} page(s) each "
+              f"= 1 search + {len(opened) * max(1, args.pages)} page requests")
+    digests = []
+    if opened:
+        with ThreadPoolExecutor(max_workers=max(1, min(4, len(opened)))) as pool:
+            digests = list(pool.map(
+                lambda row: topic_digest(row["topic_id"], cookies, args.pages, args.posts),
+                opened))
+        if not args.json:
+            for row, digest in zip(opened, digests):
+                print()
+                print_digest(digest, row["title"])
+    elif not args.json:
+        print("  next: pick a t=<id>, then: csrin_session.py topic <id>")
+    if args.json:
+        print(json.dumps({"query": args.query, "total": total,
+                          "rows": shown, "opened": digests}, indent=2))
+    return 4 if not rows else 0
+
+
+def cmd_topic(args) -> int:
+    topic_id = topic_id_from(args.target)
+    if not topic_id:
+        print("expected a topic id: 123, t=123, or viewtopic.php?t=123", file=sys.stderr)
+        return 2
+    digests = [topic_digest(topic_id, open_session(args.cookies), args.pages, args.posts)]
+    if args.json:
+        print(json.dumps(digests[0], indent=2))
+    else:
+        print_digest(digests[0])
+    return 0 if digests[0]["status"] == 200 else 2
+
+
+def cmd_fetch(args) -> int:
+    cookies = open_session(args.cookies)
+    code, page = request_page(args.url, cookies)
+    if code:
+        return code
+    if "Search found" in page or "Search these results" in page:
+        if 'class="topictitle"' in page and 'name="p' not in page:
+            rows = parse_topics(page, args.max_posts)
+            if args.json:
+                print(json.dumps(rows, indent=2))
+            else:
+                for row in rows:
+                    print(f"t={row['topic_id']}  [{row['forum']}]  {row['title']}")
+            return 0 if rows else 4
+        rows = parse_search(page, args.max_posts)
+        if args.json:
+            print(json.dumps(rows, indent=2))
+        else:
+            for row in rows:
+                print(f"p{row['post_id']}  {row['posted']}  {row['author']}  "
+                      f"[{row['forum']}]  {row['topic']}")
+                print(f"      {row['excerpt'][:200]}")
+        return 0 if rows else 4
+    posts = parse_posts(page, args.max_posts)
+    if args.json:
+        print(json.dumps(posts, indent=2))
+    elif args.text:
+        for post in posts:
+            print(post["text"])
+    else:
+        for post in posts:
+            print(format_post(post))
+    return 0 if posts else 4
+
+
+def cmd_login(args) -> int:
+    cookies = parse_cookie_header(args.cookies) if args.cookies else load_saved_session()
+    user = args.user or os.environ.get("CSRIN_USER")
+    password = args.password or os.environ.get("CSRIN_PASSWORD")
+    if not user:
+        user = input("cs.rin.ru username: ").strip()
+    if not password:
+        password = getpass.getpass("cs.rin.ru password: ")
+    login(cookies, user, password)
+    status, index = fetch(BASE, cookies)
+    print(f"logged in as {user}: {is_logged_in(index)}")
+    if is_logged_in(index) and args.save:
+        print(f"session written to {save_session(cookies, user)}")
+    return 0 if is_logged_in(index) else 3
+
+
+def cmd_whoami(args) -> int:
+    cookies = open_session(args.cookies)
+    status, index = fetch(BASE, cookies)
+    logged = is_logged_in(index)
+    print(f"logged in: {logged}"
+          + ("" if logged else " (guest: links are masked, f=22 is hidden)"))
+    return 0 if logged else 1
 
 
 # --------------------------------------------------------------------------- #
 # cli
 # --------------------------------------------------------------------------- #
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="csrin_session.py",
+        description="Talk to cs.rin.ru/forum: search topics, read a thread's tail, "
+                    "log in, check the session.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def add_session_flags(target: argparse.ArgumentParser) -> None:
+        target.add_argument("--cookies", metavar="HEADER",
+                            help="cookie header, k=v; k=v (default: .state/session.json)")
+        target.add_argument("--json", action="store_true", help="print JSON")
+
+    search = sub.add_parser("search", help="title search; lists every matching topic row")
+    search.add_argument("query")
+    search.add_argument("--list", type=int, default=0, metavar="N",
+                        help="rows to print; 0 means all (default 0)")
+    search.add_argument("--open", type=int, default=0, metavar="N",
+                        help="also digest the first N rows, capped at 6 (default 0)")
+    search.add_argument("--pages", type=int, default=3, metavar="N",
+                        help="pages per opened topic (default 3)")
+    search.add_argument("--posts", type=int, default=15, metavar="N",
+                        help="posts per page in a digest (default 15)")
+    search.add_argument("--sort", choices=("relevance", "time"), default=None,
+                        help="'time' puts the newest topics first")
+    add_session_flags(search)
+    search.set_defaults(func=cmd_search)
+
+    topic = sub.add_parser("topic", help="digest a thread's tail")
+    topic.add_argument("target", help="123, t=123, or viewtopic.php?t=123")
+    topic.add_argument("--pages", type=int, default=3, metavar="N",
+                       help="pages of the tail to read (default 3)")
+    topic.add_argument("--posts", type=int, default=15, metavar="N",
+                       help="posts per page (default 15)")
+    add_session_flags(topic)
+    topic.set_defaults(func=cmd_topic)
+
+    fetch_cmd = sub.add_parser("fetch", help="parse one board URL you already know")
+    fetch_cmd.add_argument("url")
+    fetch_cmd.add_argument("--text", action="store_true", help="post text only")
+    fetch_cmd.add_argument("--max-posts", type=int, default=None, metavar="N")
+    add_session_flags(fetch_cmd)
+    fetch_cmd.set_defaults(func=cmd_fetch)
+
+    login_cmd = sub.add_parser("login", help="log in; --save keeps the session in .state/")
+    login_cmd.add_argument("--user", help="account name (default: CSRIN_USER or a prompt)")
+    login_cmd.add_argument("--password", help="password (default: CSRIN_PASSWORD or a prompt)")
+    login_cmd.add_argument("--save", action="store_true",
+                           help="write the phpBB cookies to .state/session.json (0600)")
+    login_cmd.add_argument("--cookies", metavar="HEADER",
+                           help="start from this cookie header instead of .state/")
+    login_cmd.set_defaults(func=cmd_login)
+
+    whoami = sub.add_parser("whoami", help="is the current session logged in?")
+    whoami.add_argument("--cookies", metavar="HEADER")
+    whoami.set_defaults(func=cmd_whoami)
+    return parser
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("url", nargs="?", help="board path or absolute URL")
-    parser.add_argument("--find", metavar="QUERY",
-                        help="one shot: title search, then the newest page of the top topics")
-    parser.add_argument("--topics", type=int, default=0,
-                        help="topics to open in --find, capped at 6; 0 lists only (default 0)")
-    parser.add_argument("--list", type=int, default=0, metavar="N",
-                        help="result rows to print in --find; 0 means all (default 0)")
-    parser.add_argument("--sort", choices=("relevance", "time"),
-                        help="--find ordering; 'time' puts the newest topics first")
-    parser.add_argument("--posts", type=int, default=15, help="posts per page digest (default 15)")
-    parser.add_argument("--pages", type=int, default=3, metavar="N",
-                        help="pages of a thread tail to read, newest last (default 3)")
-    parser.add_argument("--last", action="store_true",
-                        help="digest the newest page of the given topic URL")
-    parser.add_argument("--cookies", help="cookie header string, k=v; k=v")
-    parser.add_argument("--json", action="store_true", help="print JSON")
-    parser.add_argument("--text", action="store_true", help="print post text only")
-    parser.add_argument("--max-posts", type=int, default=None)
-    parser.add_argument("--save-session", action="store_true",
-                        help="write the phpBB cookies to .state/session.json (0600); securitytoken is never stored")
-    args = parser.parse_args(argv)
-
-    cookies: dict[str, str] = {}
-    if args.cookies:
-        for part in args.cookies.split(";"):
-            if "=" in part:
-                key, value = part.split("=", 1)
-                cookies[key.strip()] = value.strip()
-    else:
-        cookies = load_saved_session()
-
-    had_session = bool(cookies.get(COOKIE_PREFIX + "sid"))
-    _, index = fetch(BASE, cookies)
-    if had_session and not is_logged_in(index):
-        # A stale phpBB session answers as a guest, not with an error.
-        print("warning: session not logged in (toolbar shows Login)", file=sys.stderr)
-
-    user, password = os.environ.get("CSRIN_USER"), os.environ.get("CSRIN_PASSWORD")
-    if user and password:
-        login(cookies, user, password)
-
-    if args.find:
-        return find(args.find, cookies, args.topics, args.posts,
-                    args.list, None if args.sort in (None, "relevance") else args.sort,
-                    args.pages)
-    if not args.url:
-        parser.error("give a board URL, or --find QUERY")
-    if args.last:
-        return last_page(args.url, cookies, args.posts, args.pages)
-
-    status, page = fetch(args.url, cookies, referer=BASE)
-    if status != 200:
-        print(f"request failed: {status}", file=sys.stderr)
-        return 2
-    if "cannot use search at this time" in page:
-        print("search is flood-limited right now; wait a few minutes "
-              "or use a known topic URL instead", file=sys.stderr)
-        return 5
-    if args.save_session and args.cookies:
-        saved = save_session(cookies, user)
-        print(f"session written to {saved}", file=sys.stderr)
-
-    is_search = "Search found" in page or "Search these results" in page
-    if is_search and 'class="topictitle"' in page and 'name="p' not in page:
-        topics = parse_topics(page, args.max_posts)
-        if not topics:
-            print("topic search returned no rows", file=sys.stderr)
-            return 4
-        if args.json:
-            print(json.dumps({"url": args.url, "logged_in": is_logged_in(page),
-                              "matches": search_total(page), "topics": topics},
-                             indent=2, ensure_ascii=False))
-        else:
-            total = search_total(page)
-            if total is not None:
-                print(f"matches={total}")
-            for row in topics:
-                print(f"t{row['topic_id']}\tf{row['forum_id']}\t{row['author']}\t"
-                      f"[{row['forum']}] {row['title']}")
-        return 0
-    if is_search:
-        rows = parse_search(page, args.max_posts)
-        if not rows:
-            print("search page returned no rows", file=sys.stderr)
-            return 4
-        if args.json:
-            print(json.dumps({"url": args.url, "logged_in": is_logged_in(page),
-                              "matches": search_total(page), "results": rows},
-                             indent=2, ensure_ascii=False))
-        else:
-            total = search_total(page)
-            if total is not None:
-                print(f"matches={total}")
-            for row in rows:
-                print(f"p{row['post_id']}\t{row['posted']}\t{row['author']}\t"
-                      f"build={row['build_ids'] or '-'}\ttopic={row['topic_id']}\t"
-                      f"[{row['forum']}] {row['topic']}")
-                print(f"    {row['excerpt'][:200]}")
-        return 0
-
-    posts = parse_posts(page, args.max_posts)
-    if not posts:
-        print(json.dumps({"url": args.url, "logged_in": is_logged_in(page), "posts": []},
-                         indent=2, ensure_ascii=False) if args.json
-              else "no posts found on this page", file=sys.stdout)
-        return 4
-    if args.json:
-        print(json.dumps({"url": args.url, "logged_in": is_logged_in(page),
-                          "posts": posts}, indent=2, ensure_ascii=False))
-    elif args.text:
-        for post in posts:
-            print(f"--- p{post['post_id']} {post['author']} {post['posted']}")
-            print(post["text"])
-    else:
-        for post in posts:
-            hosts = ", ".join(sorted({urllib.parse.urlsplit(l['href']).netloc
-                                      for l in post["links"] if l["href"].startswith("http")}))
-            print(f"p{post['post_id']}\t{post['posted']}\t{post['author']}\t"
-                  f"build={post['build_ids'] or '-'}\tlinks={len(post['links'])}\t{hosts}")
-    return 0
+    args = build_parser().parse_args(argv)
+    if getattr(args, "json", False) is None:
+        args.json = False
+    return args.func(args)
 
 
 if __name__ == "__main__":
