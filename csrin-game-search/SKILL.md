@@ -28,6 +28,19 @@ The table exists to explain *why* a session is mandatory, not to offer a degrade
 
 ## Workflow
 
+### The shape of a fast run
+
+Once the session exists (step 0), a routine lookup is three commands:
+
+```bash
+python csrin_session.py --find "<English name>" --topics 0   # 1 request: every matching topic row
+python csrin_session.py 'viewtopic.php?t=<id>' --last        # 3 pages of that thread's tail
+python check_links.py <primary link> <fallback link>         # one parallel pass
+```
+
+Between the first and the second, the agent does the part no flag can do: read the rows, pick the threads by their forum column, and decide whether the tail answered the question. When the top rows are obviously right, `--find` without `--topics 0` merges the first two commands at the cost of six requests.
+
+
 **0. Get a session before anything else — this skill does not run anonymously.** A guest reads topic pages, but every download link is replaced by `[[Please login to see this link.]]` and the whole clean-files section is hidden, so an anonymous run produces a report nobody can act on and the work is spent twice.
 
 1. **Look first.** Check the skill's own `.state/` directory for a stored session before touching the board.
