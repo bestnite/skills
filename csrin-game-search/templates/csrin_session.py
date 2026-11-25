@@ -9,7 +9,7 @@ Standard library only. Nothing is probed, nothing is written unless you pass
 ``--save-session``, and no request is made that the URL does not name.
 
 Usage:
-    python csrin_session.py --find "<English game name>"      # search + newest pages, one call
+    python csrin_session.py --find "<English game name>"      # one search request: every matching row
     python csrin_session.py 'viewtopic.php?t=<topic>' --last  # digest one thread's newest page
     python csrin_session.py 'viewtopic.php?f=10&t=<topic>' --json
     python csrin_session.py 'search.php?keywords=<appid>&sr=posts' --text
@@ -513,7 +513,7 @@ def format_post(post: dict) -> str:
     return "  ".join(bits) + "\n      " + text
 
 
-def find(query: str, cookies: dict[str, str], topics_n: int = 2,
+def find(query: str, cookies: dict[str, str], topics_n: int = 0,
          posts_n: int = 15, list_n: int = 0, sort: str | None = None,
          pages: int = 3) -> int:
     """Search by title, then print the newest page of the top topics.
@@ -552,7 +552,11 @@ def find(query: str, cookies: dict[str, str], topics_n: int = 2,
     # alone. Cost is 1 + opened × pages, whatever the query returned.
     chosen = topics[:max(0, min(topics_n, 6))]
     print(f"  opening {len(chosen)} of {len(topics)} topics, {pages} page(s) each "
-          f"= {1 + len(chosen) * max(1, pages)} requests")
+          f"= 1 search + {len(chosen) * max(1, pages)} page requests")
+    if not chosen:
+        print("  next: pick a t=<id> and run: "
+              "csrin_session.py 'viewtopic.php?t=<id>' --last")
+        return 0
     with ThreadPoolExecutor(max_workers=max(1, min(4, len(chosen)))) as pool:
         tails = list(pool.map(lambda t: topic_tail(t["topic_id"], cookies, pages), chosen))
     for topic, (status, tail) in zip(chosen, tails):
@@ -591,8 +595,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("url", nargs="?", help="board path or absolute URL")
     parser.add_argument("--find", metavar="QUERY",
                         help="one shot: title search, then the newest page of the top topics")
-    parser.add_argument("--topics", type=int, default=2,
-                        help="topics to open in --find, capped at 6 (default 2)")
+    parser.add_argument("--topics", type=int, default=0,
+                        help="topics to open in --find, capped at 6; 0 lists only (default 0)")
     parser.add_argument("--list", type=int, default=0, metavar="N",
                         help="result rows to print in --find; 0 means all (default 0)")
     parser.add_argument("--sort", choices=("relevance", "time"),

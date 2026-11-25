@@ -33,12 +33,12 @@ The table exists to explain *why* a session is mandatory, not to offer a degrade
 Once the session exists (step 0), a routine lookup is three commands:
 
 ```bash
-python csrin_session.py --find "<English name>" --topics 0   # 1 request: every matching topic row
-python csrin_session.py 'viewtopic.php?t=<id>' --last        # 3 pages of that thread's tail
-python check_links.py <primary link> <fallback link>         # one parallel pass
+python csrin_session.py --find "<English name>"        # one search request: every matching row
+python csrin_session.py 'viewtopic.php?t=<id>' --last  # 3 pages of that thread's tail
+python check_links.py <primary link> <fallback link>   # one parallel pass
 ```
 
-Between the first and the second, the agent does the part no flag can do: read the rows, pick the threads by their forum column, and decide whether the tail answered the question. When the top rows are obviously right, `--find` without `--topics 0` merges the first two commands at the cost of six requests.
+`--find` lists and stops: it does not open a thread the agent has not chosen, because the first two rows of a search are often not the two that matter. Choosing is the part no flag can do — read the rows, pick the threads by their forum column, then spend the fetches on those. `--topics N` (max 6) is there for when the choice is already obvious and a round trip is worth saving.
 
 
 **0. Get a session before anything else — this skill does not run anonymously.** A guest reads topic pages, but every download link is replaced by `[[Please login to see this link.]]` and the whole clean-files section is hidden, so an anonymous run produces a report nobody can act on and the work is spent twice.
@@ -53,9 +53,9 @@ A pasted cookie only authenticates when the agent's requests leave from the same
 
 **1. Resolve the game identity before searching.** The English store name is what the board uses, and the AppID is a better search key than the name. Use the Steam store search API (`https://store.steampowered.com/api/storesearch/?term=<name>&l=english&cc=us`) to turn a title into `{appid, canonical name}`; if the user gave an AppID, use `appdetails` to get the name. Never search a translated or abbreviated title first — the board indexes the English Steam name. That name is the usual key, not a guaranteed one: when the title query comes back empty, try the AppID, then the series or developer name.
 
-**2. Search and open the newest page in one call.** `python csrin_session.py --find "<English name>"` runs the title search and then prints the newest page of the top two topics: per post, the author with their post count and join date, the build stamp, the hosts, and a text peek. One invocation replaces the usual "search, then open a thread, then open another thread" sequence, which costs a model round trip each time.
+**2. Search and open the newest page in one call.** `python csrin_session.py --find "<English name>"` runs the title search and prints every matching row — topic id, forum, title. Add `--topics N` to also digest the newest pages of the first N threads (per post: author with post count and join date, build stamp, hosts, and a text peek); the default opens none, because the rows that matter are the agent's to pick.
 
-A broad query is normal: a common word can return dozens of topics on one page. Those rows cost nothing to list — one search request returns the whole page — and `--find` opens only the first `--topics` of them (default 2, hard cap 6), each for `--pages` pages (default 3). The cost is therefore `1 + opened × pages` and is printed before the fetch starts: with 41 matches it says `opening 2 of 41 topics, 3 page(s) each = 7 requests`, and the worst case, six topics, is 19 requests and about ten seconds. It is never `1 + N × 3`. When the list is noisy, `--topics 0` lists it for a single request, and the two threads that matter — one `Steam Content Sharing`, one `Main Forum` — get opened by hand afterwards.
+A broad query is normal: a common word can return dozens of topics on one page. Listing them is one search request, whatever the count. Opening is opt-in: `--topics N` (default 0, hard cap 6) fetches that many of the listed threads, `--pages` pages each (default 3), and the tool prints the arithmetic before it starts — `opening 2 of 41 topics, 3 page(s) each = 1 search + 6 page requests`. It is never `1 + N × 3`, and by default it is the search alone.
 
 It gathers, it does not decide. Which topic matters, whether the last page actually holds a release, whether to walk one page further back, whether a name needs the AppID instead — that is the agent's judgement, and `--find` prints the evidence for it rather than a verdict. When the title query comes back empty or short, retry with the AppID or the series name; the board indexes the English Steam name. All three threads a game can have (Main Forum discussion, `SCS - <Game>` clean files, a reupload thread) show up in the same result list, with their forum named. Search parameters and fallbacks: `references/search-recipes.md`.
 
