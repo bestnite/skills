@@ -457,6 +457,39 @@ def fetch_last_page(topic_id: str, cookies: dict[str, str]) -> tuple[int, str]:
     return fetch(url, cookies, referer=BASE)
 
 
+def topic_tail(topic_id: str, cookies: dict[str, str],
+               pages: int = 3) -> tuple[int, list[tuple[int, str]]]:
+    """The last `pages` pages of a topic, oldest first, in 1 + (pages-1) requests.
+
+    The newest page is fetched by asking for an offset past the end, which phpBB
+    clamps to the final page; its pagination then gives the real offset, and the
+    pages before it are 15 posts apart. A tail of three pages exists because the
+    last page of a long thread is often people talking about the release rather
+    than the release itself.
+    """
+    status, first = fetch_last_page(topic_id, cookies)
+    if status != 200:
+        return status, []
+    # Pagination links arrive entity-escaped: t=68085&amp;start=645.
+    starts = [int(value) for value in
+              re.findall(r"(?:&amp;|&|\?)start=(\d+)", first)]
+    last = max(starts) if starts else 0
+    offsets = sorted({max(0, last - 15 * step) for step in range(max(1, pages))})
+    found = {last: first}
+    todo = [offset for offset in offsets if offset != last]
+    if todo:
+        with ThreadPoolExecutor(max_workers=min(4, len(todo))) as pool:
+            results = pool.map(
+                lambda offset: (offset, fetch(f"{BASE}viewtopic.php?t={topic_id}&start={offset}",
+                                              cookies, referer=BASE)),
+                todo,
+            )
+            for offset, (status, html) in results:
+                if status == 200:
+                    found[offset] = html
+    return 200, [(offset, found[offset]) for offset in offsets if offset in found]
+
+
 def format_post(post: dict) -> str:
     """One post as two lines: the metadata the ranking needs, then a text peek."""
     posted = re.sub(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*",
@@ -481,7 +514,8 @@ def format_post(post: dict) -> str:
 
 
 def find(query: str, cookies: dict[str, str], topics_n: int = 2,
-         posts_n: int = 15, list_n: int = 0, sort: str | None = None) -> int:
+         posts_n: int = 15, list_n: int = 0, sort: str | None = None,
+         pages: int = 3) -> int:
     """Search by title, then print the newest page of the top topics.
 
     It gathers; it does not decide. No topic is called the best, nothing is
@@ -518,26 +552,31 @@ def find(query: str, cookies: dict[str, str], topics_n: int = 2,
     # 1 + topics_n requests no matter how many matches the query produced.
     chosen = topics[:max(0, min(topics_n, 6))]
     with ThreadPoolExecutor(max_workers=max(1, min(4, len(chosen)))) as pool:
-        pages = list(pool.map(lambda t: fetch_last_page(t["topic_id"], cookies), chosen))
-    for topic, (status, html) in zip(chosen, pages):
-        print(f"\n--- t={topic['topic_id']} last page (status {status}): {topic['title']}")
-        for post in parse_posts(html, posts_n):
-            print(format_post(post))
+        tails = list(pool.map(lambda t: topic_tail(t["topic_id"], cookies, pages), chosen))
+    for topic, (status, tail) in zip(chosen, tails):
+        print(f"\n--- t={topic['topic_id']} (status {status}, {len(tail)} page(s)): {topic['title']}")
+        for offset, html in tail:
+            print(f"  [start={offset}]")
+            for post in parse_posts(html, posts_n):
+                print(format_post(post))
     return 0
 
 
-def last_page(url: str, cookies: dict[str, str], posts_n: int = 15) -> int:
+def last_page(url: str, cookies: dict[str, str], posts_n: int = 15,
+              pages: int = 3) -> int:
     """Digest the newest page of one topic URL."""
     match = re.search(r"[?&]t=(\d+)", url)
     if not match:
         print("--last needs a viewtopic.php?t=<id> URL", file=sys.stderr)
         return 2
-    status, html = fetch_last_page(match.group(1), cookies)
+    status, tail = topic_tail(match.group(1), cookies, pages)
     if status != 200:
         print(f"request failed: {status}", file=sys.stderr)
         return 2
-    for post in parse_posts(html, posts_n):
-        print(format_post(post))
+    for offset, html in tail:
+        print(f"[start={offset}]")
+        for post in parse_posts(html, posts_n):
+            print(format_post(post))
     return 0
 
 
@@ -557,6 +596,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sort", choices=("relevance", "time"),
                         help="--find ordering; 'time' puts the newest topics first")
     parser.add_argument("--posts", type=int, default=15, help="posts per page digest (default 15)")
+    parser.add_argument("--pages", type=int, default=3, metavar="N",
+                        help="pages of a thread tail to read, newest last (default 3)")
     parser.add_argument("--last", action="store_true",
                         help="digest the newest page of the given topic URL")
     parser.add_argument("--cookies", help="cookie header string, k=v; k=v")
@@ -588,11 +629,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.find:
         return find(args.find, cookies, args.topics, args.posts,
-                    args.list, None if args.sort in (None, "relevance") else args.sort)
+                    args.list, None if args.sort in (None, "relevance") else args.sort,
+                    args.pages)
     if not args.url:
         parser.error("give a board URL, or --find QUERY")
     if args.last:
-        return last_page(args.url, cookies, args.posts)
+        return last_page(args.url, cookies, args.posts, args.pages)
 
     status, page = fetch(args.url, cookies, referer=BASE)
     if status != 200:
