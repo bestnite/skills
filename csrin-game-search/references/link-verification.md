@@ -31,6 +31,7 @@ Measured on 2026-11-25: a host whose content API answered `401` and whose page i
 
 Link checking is the last step and the easiest place to lose the run: a dozen URLs sent one at a time, each waiting out its own timeout, is time the user never gets back.
 
+- **A container page is one link, not a hunt.** A `filecrypt`/`pearcrypt` container usually answers 403 to a plain client, which is `BLOCKED`: open that one URL in a browser once and read the file list it renders. Do not go looking for a saved snapshot of the page on disk — the browser tool tells you where it wrote files, and a filesystem-wide search for the filename costs minutes and finds nothing.
 - **Check what the user will click.** The primary link of the two or three best candidates, plus a fallback host if there is one. Not every part of a twelve-part upload, not every link in the thread: the first part of a split set tells you whether the set is alive.
 - **One pass, in parallel, capped per host.** `scripts/check_links.py` runs the URLs together with an 8 s timeout, six in flight overall and at most two against any single host — twelve parts of one upload therefore do not arrive as twelve simultaneous requests and turn a working link into a 429. Flags: `--timeout`, `--workers`, `--per-host`, `--json`; exit 0 when something is alive, 1 when nothing is, 2 on bad usage.
 - **Budget it.** A few seconds per host, one browser attempt at most, and no retry when a host already refused. If the cheap pass cannot settle a link, `BLOCKED` is a finished answer, not a failure.

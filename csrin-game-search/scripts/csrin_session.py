@@ -618,12 +618,14 @@ def topic_digest(topic_id: str, cookies: dict[str, str], pages: int,
                  posts_n: int) -> dict:
     """Structured tail: the pages and their posts, ready for text or JSON."""
     status, tail = topic_tail(topic_id, cookies, pages)
-    return {
-        "status": status,
-        "topic_id": topic_id,
-        "pages": [{"start": start, "posts": parse_posts(html, posts_n)}
-                  for start, html in tail],
-    }
+    pages_out = [{"start": start, "posts": parse_posts(html, posts_n)}
+                 for start, html in tail]
+    # `posts` is the flat reading order; `pages` keeps the offsets. Both are
+    # shipped because a caller that only wants the posts should not have to know
+    # about pagination, and that guess is what sends it off to write its own client.
+    flat = [dict(post, page_start=page["start"])
+            for page in pages_out for post in page["posts"]]
+    return {"status": status, "topic_id": topic_id, "pages": pages_out, "posts": flat}
 
 
 def print_digest(digest: dict, label: str = "") -> None:

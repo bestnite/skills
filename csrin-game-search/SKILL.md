@@ -96,6 +96,8 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - Do not call a link dead because a bot check refused you. 401/403/429/503 and JavaScript-only pages are `UNVERIFIED`.
 - Do not present a Denuvo title's download as something that will start. It needs a hypervisor release for that exact build, and running it means turning Windows' virtualization-based security off for the session.
 - Do not mix hypervisor crack files across games or builds. The Denuvo token is bound to one build, and the hypervisor drivers carry game-specific code.
+- Do not search the filesystem to find something. `find /`, `grep -r /` and their relatives cost minutes, scan the whole machine for one filename, and usually return nothing — a tool that wrote a file reported its path, and a path nobody named is a question for the user. If a snapshot or a download moved, look in the directory the tool printed, not in `/`.
+- Do not re-implement the client because an output shape surprised you. The JSON shapes are documented in `references/search-recipes.md`; if one is missing there, that is the bug to report, not a reason to write a second scraper beside the first.
 
 ## What ships here
 

@@ -89,6 +89,25 @@ Cost is one search request plus `opened × pages` page requests (opened defaults
 
 They exist to save round trips, not to decide anything: the result is raw material for the judgement in `source-ranking.md`. A page that turns out to be chatter is a normal outcome, and the next step is one page further back or another topic.
 
+## The JSON shapes
+
+`--json` is for scripts and for the agent's own parsing; the text output is for reading.
+
+```
+search --json   {"query": str, "total": int|null,
+                 "rows": [{"forum_id","topic_id","title","forum","author"}],
+                 "opened": [<topic digest>, ...]}
+
+topic --json    {"status": int, "topic_id": str,
+                 "pages": [{"start": int, "posts": [<post>, ...]}],
+                 "posts": [<post>, ...]}          # flat reading order, oldest first
+
+fetch --json    the parsed page: [<post>] for a topic, search rows for a result
+                page, or topic rows for a `sr=topics` page
+```
+
+A `<post>` record carries `post_id`, `author`, `posted`, `joined`, `post_count`, `build_ids`, `links` (`host`, `href`, `unsafe`, `internal`), `masked_links` and `text`; the flat `posts` list adds `page_start`. Nothing here is a verdict — the build, the uploader and the hosts are inputs for the ranking in `source-ranking.md`.
+
 ## Result rows
 
 A `sr=posts` row carries everything needed to continue:
