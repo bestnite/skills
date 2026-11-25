@@ -32,7 +32,7 @@ Measured on 2026-11-25: a host whose content API answered `401` and whose page i
 Link checking is the last step and the easiest place to lose the run: a dozen URLs sent one at a time, each waiting out its own timeout, is time the user never gets back.
 
 - **Check what the user will click.** The primary link of the two or three best candidates, plus a fallback host if there is one. Not every part of a twelve-part upload, not every link in the thread: the first part of a split set tells you whether the set is alive.
-- **One pass, in parallel.** `templates/check_links.py` runs the URLs together with a short timeout, so ten links cost about as long as the slowest.
+- **One pass, in parallel, capped per host.** `templates/check_links.py` runs the URLs together with an 8 s timeout, six in flight overall and at most two against any single host — twelve parts of one upload therefore do not arrive as twelve simultaneous requests and turn a working link into a 429. Flags: `--timeout`, `--workers`, `--per-host`, `--json`; exit 0 when something is alive, 1 when nothing is, 2 on bad usage.
 - **Budget it.** A few seconds per host, one browser attempt at most, and no retry when a host already refused. If the cheap pass cannot settle a link, `BLOCKED` is a finished answer, not a failure.
 
 ## Hosts answer in three different ways
@@ -43,7 +43,7 @@ Link checking is the last step and the easiest place to lose the run: a dozen UR
 | The page answers 200 for a missing file | fetch the page, look for the host's "not found" wording | 200 means "I served you a page", not "the file exists" |
 | The API refuses anonymous callers, or the page renders only in a browser | do not guess — `UNVERIFIED` | alive and dead are indistinguishable without a browser |
 
-`templates/check_links.py` implements all three for the hosts this skill meets most often, one request per link, and prints a verdict line each. Read it before writing an ad-hoc check, and extend the host table rather than sprinkling special cases through the call.
+`templates/check_links.py` implements all three for the hosts this skill meets most often, one request per link, and prints a verdict line each or a JSON array with `--json`. Read it before writing an ad-hoc check, and extend the host table rather than sprinkling special cases through the call.
 
 ## Rules
 
