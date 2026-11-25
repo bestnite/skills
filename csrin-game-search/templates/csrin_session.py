@@ -9,6 +9,8 @@ Standard library only. Nothing is probed, nothing is written unless you pass
 ``--save-session``, and no request is made that the URL does not name.
 
 Usage:
+    python csrin_session.py --find "<English game name>"      # search + newest pages, one call
+    python csrin_session.py 'viewtopic.php?t=<topic>' --last  # digest one thread's newest page
     python csrin_session.py 'viewtopic.php?f=10&t=<topic>' --json
     python csrin_session.py 'search.php?keywords=<appid>&sr=posts' --text
     CSRIN_USER=name CSRIN_PASSWORD=secret python csrin_session.py 'index.php'
@@ -26,6 +28,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html import unescape
 from pathlib import Path
@@ -44,6 +47,9 @@ USER_AGENT = (
 # ADAPT: where a saved session may live. The default is this skill's own .state/
 # directory, which the skill gitignores; anything else is the user's call.
 STATE_FILE = Path(__file__).resolve().parent.parent / ".state" / "session.json"
+
+# One request may not hang the whole run: a slow host costs seconds, not minutes.
+TIMEOUT = 15
 
 # The phpBB identity cookies; ``securitytoken`` is deliberately not in this set.
 COOKIE_PREFIX = "csrinru_phpbb3_"
@@ -103,7 +109,7 @@ def _request(url: str, cookies: dict[str, str], data: bytes | None = None,
         headers["Referer"] = referer
     req = urllib.request.Request(url, data=data, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             _absorb(resp.headers, cookies)
             return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
@@ -416,13 +422,121 @@ def parse_search(html: str, limit: int | None = None) -> list[dict]:
     return rows
 
 
+
+# --------------------------------------------------------------------------- #
+# one-shot lookups: one call, raw material, no decisions
+# --------------------------------------------------------------------------- #
+
+def search_url(query: str) -> str:
+    """Topic-title search, newest first — the cheapest useful first query."""
+    return BASE + "search.php?" + urllib.parse.urlencode({
+        "keywords": query,
+        "terms": "all",
+        "sf": "titleonly",
+        "sr": "topics",
+        "submit": "Search",
+    })
+
+
+def fetch_last_page(topic_id: str, cookies: dict[str, str]) -> tuple[int, str]:
+    """One request for the newest page.
+
+    phpBB clamps an offset past the end of the topic, so asking for a huge
+    ``start`` returns the last page without paging through the thread first.
+    Verified on 2026-11-25 against a 44-page topic: ``start=99999`` and the true
+    last offset returned the same posts.
+    """
+    url = f"{BASE}viewtopic.php?t={topic_id}&start=999999"
+    return fetch(url, cookies, referer=BASE)
+
+
+def format_post(post: dict) -> str:
+    """One post as two lines: the metadata the ranking needs, then a text peek."""
+    posted = re.sub(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*",
+                    "", post["posted"] or "")
+    bits = [f"p{post['post_id']}", posted[:24], post["author"] or "?"]
+    if post.get("post_count") is not None:
+        bits.append(f"posts={post['post_count']}")
+    if post.get("joined"):
+        bits.append(f"joined={post['joined']}")
+    if post.get("build_ids"):
+        bits.append("build=" + ",".join(str(b) for b in post["build_ids"][:3]))
+    hosts = sorted({link["host"] for link in post["links"] if link.get("host")})
+    if hosts:
+        bits.append("hosts=" + ",".join(hosts[:4]))
+    unsafe = sum(1 for link in post["links"] if link.get("unsafe"))
+    if unsafe:
+        bits.append(f"unsafe={unsafe}")
+    if post.get("masked_links"):
+        bits.append("masked")
+    text = " ".join(post["text"].split())[:240]
+    return "  ".join(bits) + "\n      " + text
+
+
+def find(query: str, cookies: dict[str, str], topics_n: int = 2,
+         posts_n: int = 15) -> int:
+    """Search by title, then print the newest page of the top topics.
+
+    It gathers; it does not decide. No topic is called the best, nothing is
+    filtered for "looks like a release", and a short page is reported as short —
+    reading further back, or opening another topic, stays the agent's call.
+    """
+    status, page = fetch(search_url(query), cookies, referer=BASE)
+    if status != 200:
+        print(f"search failed: {status}", file=sys.stderr)
+        return 2
+    if "cannot use search at this time" in page:
+        print("search is flood-limited right now; wait a few minutes or open "
+              "a known topic URL", file=sys.stderr)
+        return 5
+    total = search_total(page)
+    topics = parse_topics(page, 12)
+    print(f"search: {query!r} -> {total if total is not None else '?'} matches, "
+          f"{len(topics)} topic rows")
+    if not topics:
+        print("no topic rows: try the AppID, the untranslated English name, or "
+              "the series name", file=sys.stderr)
+        return 4
+    for index, topic in enumerate(topics, 1):
+        print(f"  {index}. t={topic['topic_id']}  [{topic['forum']}]  {topic['title']}")
+    chosen = topics[:topics_n]
+    with ThreadPoolExecutor(max_workers=len(chosen)) as pool:
+        pages = list(pool.map(lambda t: fetch_last_page(t["topic_id"], cookies), chosen))
+    for topic, (status, html) in zip(chosen, pages):
+        print(f"\n--- t={topic['topic_id']} last page (status {status}): {topic['title']}")
+        for post in parse_posts(html, posts_n):
+            print(format_post(post))
+    return 0
+
+
+def last_page(url: str, cookies: dict[str, str], posts_n: int = 15) -> int:
+    """Digest the newest page of one topic URL."""
+    match = re.search(r"[?&]t=(\d+)", url)
+    if not match:
+        print("--last needs a viewtopic.php?t=<id> URL", file=sys.stderr)
+        return 2
+    status, html = fetch_last_page(match.group(1), cookies)
+    if status != 200:
+        print(f"request failed: {status}", file=sys.stderr)
+        return 2
+    for post in parse_posts(html, posts_n):
+        print(format_post(post))
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # cli
 # --------------------------------------------------------------------------- #
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("url", help="board path or absolute URL")
+    parser.add_argument("url", nargs="?", help="board path or absolute URL")
+    parser.add_argument("--find", metavar="QUERY",
+                        help="one shot: title search, then the newest page of the top topics")
+    parser.add_argument("--topics", type=int, default=2, help="topics to open in --find (default 2)")
+    parser.add_argument("--posts", type=int, default=15, help="posts per page digest (default 15)")
+    parser.add_argument("--last", action="store_true",
+                        help="digest the newest page of the given topic URL")
     parser.add_argument("--cookies", help="cookie header string, k=v; k=v")
     parser.add_argument("--json", action="store_true", help="print JSON")
     parser.add_argument("--text", action="store_true", help="print post text only")
@@ -449,6 +563,13 @@ def main(argv: list[str] | None = None) -> int:
     user, password = os.environ.get("CSRIN_USER"), os.environ.get("CSRIN_PASSWORD")
     if user and password:
         login(cookies, user, password)
+
+    if args.find:
+        return find(args.find, cookies, args.topics, args.posts)
+    if not args.url:
+        parser.error("give a board URL, or --find QUERY")
+    if args.last:
+        return last_page(args.url, cookies, args.posts)
 
     status, page = fetch(args.url, cookies, referer=BASE)
     if status != 200:

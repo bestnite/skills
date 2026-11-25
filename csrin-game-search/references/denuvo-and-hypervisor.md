@@ -1,6 +1,7 @@
 # Denuvo titles and hypervisor cracks
 
-Verified against the live board on 2026-11-25, from the staff's pinned topics on the subject (`t=156407`, `t=156419`, `t=156435`, `t=159989`) and from live Denuvo game threads.
+Detection is a reading of the thread, not a separate investigation: the words
+below appear in the posts themselves. Verified against the live board on 2026-11-25, from the staff's pinned topics on the subject (`t=156407`, `t=156419`, `t=156435`, `t=159989`) and from live Denuvo game threads.
 
 Some games cannot be run by swapping `steam_api64.dll`. Denuvo validates a token against the machine, and the working answer is a different kind of release: a hypervisor-based crack, published by a named group for one exact game build.
 

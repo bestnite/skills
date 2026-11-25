@@ -72,6 +72,19 @@ Read composition off the same result page instead. It lists posts with forum, da
 
 It is one search either way, so the cost per candidate is one query. Flood control applies (see below), so measure only the two or three accounts genuinely in contention.
 
+## One call instead of six
+
+`templates/csrin_session.py` ships two modes that collapse the usual sequence:
+
+```
+python csrin_session.py --find "<English name>" [--topics 2] [--posts 15]
+python csrin_session.py 'viewtopic.php?t=<id>' --last [--posts 15]
+```
+
+`--find` runs the title search and then opens the newest page of the top topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `--last` does the same for one topic, in a single request, because phpBB clamps `start=999999` to the final page.
+
+They exist to save round trips, not to decide anything: the result is raw material for the judgement in `source-ranking.md`. A page that turns out to be chatter is a normal outcome, and the next step is one page further back or another topic.
+
 ## Result rows
 
 A `sr=posts` row carries everything needed to continue:

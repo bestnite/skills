@@ -16,17 +16,24 @@ If nothing can fetch, say the links are unverified and why. Never label a link a
 |---|---|---|
 | `ALIVE` | the host says the file exists | verified, with the check date |
 | `DEAD` | the host says the file is gone | drop it, or keep it only to explain why the next candidate is being offered |
-| `UNVERIFIED` | the host would not answer honestly: 401, 403, 429, 503, a challenge page, a JavaScript-only page, a transport error | "could not check", never "dead" |
+| `UNVERIFIED` | the host would not answer honestly: a JavaScript-only page, a 429, a transport error | "could not check with plain HTTP" |
+| `BLOCKED` | the host answered 401/403/451 to a normal client | one browser attempt, then the user's problem |
 
 The `UNVERIFIED` bucket is the one that matters. A link behind a bot check is not a broken link, and calling it dead sends the user away from a working file. The reverse mistake — calling a dead link alive because the page returned 200 — is just as common, which is why a status code alone is not enough.
 
-**`UNVERIFIED` is a handoff, not a conclusion.** It means "the cheap check could not tell", so the next step is the strongest tool in the agent's own context, in this order:
+**One escalation, not a search for tools.** An `UNVERIFIED` link gets exactly one more attempt — a browser, which renders the JavaScript and shows what the site actually says. If that answers too, done. If the browser is refused as well (403, "request blocked", a human check that will not pass), the verdict is `BLOCKED` and it stays with the user: they have a real browser, cookies and the right network, and chasing the host further spends minutes to learn nothing.
 
-1. **A browser** — renders the JavaScript page, passes the bot check, and shows what the site actually says. This is the tool that turns an honest "cannot tell" into an answer.
-2. **A fetch or extract tool** — a different transport and user agent than a bare HTTP client, which gets past some soft blocks.
-3. **An API with a guest token**, when the host offers one.
+Do not walk a chain of tools — fetch tool, then another browser, then a different client with another user agent. Each attempt costs a round trip and the host has already told you its answer.
 
-Only when all of those fail does the verdict stay `UNVERIFIED`, and then the report says which tools were tried. Measured on 2026-11-25: a host whose content API answered `401` and whose page is JavaScript-only was declared unknowable over HTTP, and a rendered browser answered "This content does not exist" — the link was in fact dead. A second host refused anonymous API calls the same way, while its rendered page showed the file name. Both verdicts came from the browser, and neither was reachable with `curl`.
+Measured on 2026-11-25: a host whose content API answered `401` and whose page is JavaScript-only was unreadable over HTTP, and a rendered browser answered "This content does not exist" — the link was in fact dead. A second host returned `404` to a plain client and served its download page to a browser — the link was alive. One escalation covered both.
+
+## Spend seconds, not minutes
+
+Link checking is the last step and the easiest place to lose the run: a dozen URLs sent one at a time, each waiting out its own timeout, is time the user never gets back.
+
+- **Check what the user will click.** The primary link of the two or three best candidates, plus a fallback host if there is one. Not every part of a twelve-part upload, not every link in the thread: the first part of a split set tells you whether the set is alive.
+- **One pass, in parallel.** `templates/check_links.py` runs the URLs together with a short timeout, so ten links cost about as long as the slowest.
+- **Budget it.** A few seconds per host, one browser attempt at most, and no retry when a host already refused. If the cheap pass cannot settle a link, `BLOCKED` is a finished answer, not a failure.
 
 ## Hosts answer in three different ways
 

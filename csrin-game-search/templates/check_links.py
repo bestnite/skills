@@ -8,7 +8,10 @@ alive, dead, or unverified -- without downloading anything.
     python check_links.py URL [URL ...]
 
 Output: ``<VERDICT>\t<host>\t<url>\t<evidence>``; exit status is always 0,
-because a verdict is the result, not a failure.
+because a verdict is the result, not a failure. Verdicts are ALIVE, DEAD,
+BLOCKED (the host refused; one browser attempt, then the user) and UNVERIFIED
+(cannot tell). Links are checked in parallel with a short timeout, because this
+is the last step of a task and must not become the slowest.
 
 This is the cheap first pass. ``UNVERIFIED`` is a handoff, not a verdict: hand
 the URL to a browser and let the rendered page answer before you call a link
@@ -29,11 +32,11 @@ Standard library only. It fetches nothing but the URLs it is given.
 from __future__ import annotations
 
 import json
-import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 # ADAPT: an ordinary desktop user agent; some hosts serve a challenge page to
 # anything that looks like a script, which would read as "dead" if not for the
@@ -42,7 +45,8 @@ USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
-TIMEOUT = 20
+TIMEOUT = 8
+WORKERS = 6
 BODY_LIMIT = 200_000
 
 # Markers that mean the file is gone even though the page answered 200.
@@ -53,8 +57,10 @@ DEAD_MARKERS = {
     "filecrypt.cc": ("container is not available", "does not exist", "no files found"),
     "pearcrypt.lol": ("container is not available", "does not exist", "not found"),
 }
-# 403/429/503 and challenge pages mean "cannot tell", never "dead".
-UNVERIFIED_STATUS = {401, 403, 405, 429, 451, 503}
+# An outright refusal: one browser attempt is allowed, then it is the user's.
+BLOCKED_STATUS = {401, 403, 451}
+# Rate limits and odd gates: cannot tell, never "dead".
+UNVERIFIED_STATUS = {405, 429, 503}
 DEAD_STATUS = {404, 410}
 
 
@@ -111,6 +117,8 @@ def check(url: str) -> tuple[str, str]:
             return "DEAD", f"page says {marker!r}"
     if status in DEAD_STATUS:
         return "DEAD", f"http {status}"
+    if status in BLOCKED_STATUS:
+        return "BLOCKED", f"http {status}; one browser attempt, then hand it to the user"
     if status in UNVERIFIED_STATUS or status == 0:
         return "UNVERIFIED", f"http {status or 'transport error'}"
     if status == 200:
@@ -122,8 +130,11 @@ def main(argv: list[str]) -> int:
     if not argv:
         print(__doc__.strip().splitlines()[0], file=sys.stderr)
         return 2
-    for url in argv:
-        verdict, note = check(url)
+    # Links are independent, so they run together: a dozen hosts cost about as
+    # long as the slowest one instead of the sum. Output stays in input order.
+    with ThreadPoolExecutor(max_workers=min(WORKERS, len(argv))) as pool:
+        verdicts = list(pool.map(check, argv))
+    for url, (verdict, note) in zip(argv, verdicts):
         host = urllib.parse.urlsplit(url).hostname or "?"
         print(f"{verdict}\t{host}\t{url}\t{note}")
     return 0
