@@ -548,9 +548,11 @@ def find(query: str, cookies: dict[str, str], topics_n: int = 2,
         return 4
     for index, topic in enumerate(topics, 1):
         print(f"  {index}. t={topic['topic_id']}  [{topic['forum']}]  {topic['title']}")
-    # One request per opened topic, never a page walk: the cost of --find is
-    # 1 + topics_n requests no matter how many matches the query produced.
+    # Only the first `topics_n` rows are opened — the rest are listed and left
+    # alone. Cost is 1 + opened × pages, whatever the query returned.
     chosen = topics[:max(0, min(topics_n, 6))]
+    print(f"  opening {len(chosen)} of {len(topics)} topics, {pages} page(s) each "
+          f"= {1 + len(chosen) * max(1, pages)} requests")
     with ThreadPoolExecutor(max_workers=max(1, min(4, len(chosen)))) as pool:
         tails = list(pool.map(lambda t: topic_tail(t["topic_id"], cookies, pages), chosen))
     for topic, (status, tail) in zip(chosen, tails):
