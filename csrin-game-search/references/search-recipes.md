@@ -78,10 +78,11 @@ It is one search either way, so the cost per candidate is one query. Flood contr
 
 ```
 python csrin_session.py search "<English name>" [--open 2] [--pages 3] [--posts 15]
-python csrin_session.py topic <id-or-url> [--pages 3] [--posts 15]
+python csrin_session.py topic <id-or-url> [--pages 3] [--posts 15] [--links]
+python csrin_session.py post <id> [<id> ...] [--links]
 ```
 
-`search` runs the title search and lists every matching row; with `--open N` it also opens the newest pages of the first N topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `topic` does the same for one thread over its last three pages (`--pages N`): the newest page costs one request, because phpBB clamps `start=999999` to the final page, and the two before it follow from its pagination links.
+`search` runs the title search and lists every matching row; with `--open N` it also opens the newest pages of the first N topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `topic` does the same for one thread over its last three pages (`--pages N`), and `post` reads named posts in parallel — a shell loop of one `fetch` per post is one page load per post, and this is one call. `--links` prints each post's hrefs under it, which is what a report quotes: the newest page costs one request, because phpBB clamps `start=999999` to the final page, and the two before it follow from its pagination links.
 
 Cost is one search request plus `opened × pages` page requests (opened defaults to 0, capped at 6; pages default 3), whatever the query returns — forty-one matches list the same as five. The tool prints the arithmetic before it fetches.
 
@@ -97,6 +98,8 @@ They exist to save round trips, not to decide anything: the result is raw materi
 search --json   {"query": str, "total": int|null,
                  "rows": [{"forum_id","topic_id","title","forum","author"}],
                  "opened": [<topic digest>, ...]}
+
+post --json     [<post>, ...]                    # only the posts asked for
 
 topic --json    {"status": int, "topic_id": str,
                  "pages": [{"start": int, "posts": [<post>, ...]}],

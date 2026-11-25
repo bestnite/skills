@@ -33,10 +33,13 @@ The table exists to explain *why* a session is mandatory, not to offer a degrade
 Once the session exists (step 0), a routine lookup is three commands:
 
 ```bash
-python3 scripts/csrin_session.py search "<English name>"   # one request: every topic row
-python3 scripts/csrin_session.py topic 102530              # 3 pages of that thread's tail
-python3 scripts/check_links.py <primary> <fallback>        # one parallel pass
+python3 scripts/csrin_session.py search "<English name>"     # one request: every topic row
+python3 scripts/csrin_session.py topic 102530 --links        # tail, with real URLs
+python3 scripts/csrin_session.py post 3607669 3607680 --links  # specific posts, parallel
+python3 scripts/check_links.py <primary> <fallback>          # one parallel pass
 ```
+
+`topic` and `post` print every link's URL with `--links`, so what goes into a report never has to be scraped out of the HTML by hand. `post` takes any number of ids and fetches them in parallel — one call, not a shell loop of one page load per post.
 
 `search` lists and stops: it does not open a thread the agent has not chosen, because the first two rows of a search are often not the two that matter. Choosing is the part no flag can do — read the rows, pick the threads by their forum column, then spend the fetches on those. `search --open N` (max 6) exists for when the choice is already obvious and a round trip is worth saving.
 
@@ -97,6 +100,7 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - Do not present a Denuvo title's download as something that will start. It needs a hypervisor release for that exact build, and running it means turning Windows' virtualization-based security off for the session.
 - Do not mix hypervisor crack files across games or builds. The Denuvo token is bound to one build, and the hypervisor drivers carry game-specific code.
 - Do not search the filesystem to find something. `find /`, `grep -r /` and their relatives cost minutes, scan the whole machine for one filename, and usually return nothing — a tool that wrote a file reported its path, and a path nobody named is a question for the user. If a snapshot or a download moved, look in the directory the tool printed, not in `/`.
+- Do not leave the board to check a fact the thread already states. A version number, a crack group, a patch list and a password are in the posts; a tracker site, a Steam news API or a store page adds minutes and answers nothing the uploader did not write down.
 - Do not re-implement the client because an output shape surprised you. The JSON shapes are documented in `references/search-recipes.md`; if one is missing there, that is the bug to report, not a reason to write a second scraper beside the first.
 
 ## What ships here
@@ -111,6 +115,6 @@ Do not keep a whitelist or blacklist of uploader-run sites. A site is where the 
 - `references/patch-and-run.md` — Steamless, Unsteam, GBE Fork, uc-online2, Nemirtingas EOS, and the traps between them.
 - `references/session-persistence.md` — the rules for storing a login in `.state/`.
 - `scripts/check_links.py` — liveness checker: one request per URL, host-aware verdicts, standard library only.
-- `scripts/csrin_session.py` — client: handshake, optional login, `search` / `topic` / `fetch` / `login` / `whoami` subcommands, and parse either a topic page (posts, build stamps, links) or a search page (topic id, author, build, excerpt) to JSON. Standard library only; it makes no decisions for you.
+- `scripts/csrin_session.py` — client: handshake, optional login, `search` / `post` / `topic` / `fetch` / `login` / `whoami` subcommands, and parse either a topic page (posts, build stamps, links) or a search page (topic id, author, build, excerpt) to JSON. Standard library only; it makes no decisions for you.
 
 Prose carries the judgement; the template carries only the parts that must be byte-exact (cookie names, handshake order, parse targets).

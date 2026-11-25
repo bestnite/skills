@@ -12,6 +12,7 @@ Standard library only. Nothing is probed, nothing is written unless you pass
 Usage:
     csrin_session.py search "<English game name>"     # one request: every matching topic row
     csrin_session.py topic 102530                     # 3 pages of that thread's tail
+    csrin_session.py post 3607669 3607680 --links     # two posts by id, in parallel
     csrin_session.py fetch 'search.php?keywords=<appid>&sr=posts'
     csrin_session.py login --save                     # credentials from env or prompt
     csrin_session.py whoami                           # is the session still logged in?
@@ -608,10 +609,36 @@ def search_rows(page: str) -> tuple[int | None, list[dict]]:
     return search_total(page), parse_topics(page, None)
 
 
+def format_links(post: dict) -> list[str]:
+    """The hrefs behind a post, one per line — what a report has to quote."""
+    lines = []
+    for link in post.get("links", []):
+        mark = "  unsafe" if link.get("unsafe") else ""
+        lines.append(f"      LINK {link.get('host') or '?'} {link.get('href')}{mark}")
+    return lines
+
+
+def post_id_from(token: str) -> str | None:
+    """Accept ``123``, ``p=123``, or a permalink ending in ``#p123``."""
+    match = re.search(r"[?&#]p=?(\d+)", token) or re.fullmatch(r"(?:p=)?(\d+)", token.strip())
+    return match.group(1) if match else None
+
+
 def topic_id_from(target: str) -> str | None:
     """Accept ``t=123``, ``viewtopic.php?t=123``, or a bare id."""
     match = re.search(r"[?&]t=(\d+)", target) or re.fullmatch(r"(?:t=)?(\d+)", target.strip())
     return match.group(1) if match else None
+
+
+def fetch_post(post_id: str, cookies: dict[str, str]) -> dict | None:
+    """One post by id: ``viewtopic.php?p=<id>`` loads the page that holds it."""
+    status, html = fetch(f"{BASE}viewtopic.php?p={post_id}", cookies, referer=BASE)
+    if status != 200:
+        return None
+    for post in parse_posts(html):
+        if post["post_id"] == post_id:
+            return post
+    return None
 
 
 def topic_digest(topic_id: str, cookies: dict[str, str], pages: int,
@@ -628,7 +655,7 @@ def topic_digest(topic_id: str, cookies: dict[str, str], pages: int,
     return {"status": status, "topic_id": topic_id, "pages": pages_out, "posts": flat}
 
 
-def print_digest(digest: dict, label: str = "") -> None:
+def print_digest(digest: dict, label: str = "", links: bool = False) -> None:
     head = f"--- t={digest['topic_id']}"
     if label:
         head += f"  {label}"
@@ -637,6 +664,9 @@ def print_digest(digest: dict, label: str = "") -> None:
         print(f"  [start={page['start']}]")
         for post in page["posts"]:
             print(format_post(post))
+            if links:
+                for line in format_links(post):
+                    print(line)
 
 
 # --------------------------------------------------------------------------- #
@@ -681,6 +711,30 @@ def cmd_search(args) -> int:
     return 4 if not rows else 0
 
 
+def cmd_post(args) -> int:
+    cookies = open_session(args.cookies)
+    ids = [post_id_from(token) for token in args.ids]
+    if not ids or any(pid is None for pid in ids):
+        print("expected post ids: 123, p=123, or a ...#p123 permalink", file=sys.stderr)
+        return 2
+    with ThreadPoolExecutor(max_workers=max(1, min(4, len(ids)))) as pool:
+        posts = list(pool.map(lambda pid: fetch_post(pid, cookies), ids))
+    missing = [pid for pid, post in zip(ids, posts) if post is None]
+    if args.json:
+        print(json.dumps([post for post in posts if post], indent=2))
+    else:
+        for post in posts:
+            if post is None:
+                continue
+            print(format_post(post))
+            if args.links:
+                for line in format_links(post):
+                    print(line)
+        for pid in missing:
+            print(f"p{pid}: not found on the page it points to", file=sys.stderr)
+    return 0 if any(posts) else 4
+
+
 def cmd_topic(args) -> int:
     topic_id = topic_id_from(args.target)
     if not topic_id:
@@ -690,7 +744,7 @@ def cmd_topic(args) -> int:
     if args.json:
         print(json.dumps(digests[0], indent=2))
     else:
-        print_digest(digests[0])
+        print_digest(digests[0], links=args.links)
     return 0 if digests[0]["status"] == 200 else 2
 
 
@@ -726,6 +780,9 @@ def cmd_fetch(args) -> int:
     else:
         for post in posts:
             print(format_post(post))
+            if args.links:
+                for line in format_links(post):
+                    print(line)
     return 0 if posts else 4
 
 
@@ -786,12 +843,19 @@ def build_parser() -> argparse.ArgumentParser:
     add_session_flags(search)
     search.set_defaults(func=cmd_search)
 
+    post = sub.add_parser("post", help="read one or more posts by id, in parallel")
+    post.add_argument("ids", nargs="+", metavar="ID", help="123, p=123, or a ...#p123 link")
+    post.add_argument("--links", action="store_true", help="print every link URL")
+    add_session_flags(post)
+    post.set_defaults(func=cmd_post)
+
     topic = sub.add_parser("topic", help="digest a thread's tail")
     topic.add_argument("target", help="123, t=123, or viewtopic.php?t=123")
     topic.add_argument("--pages", type=int, default=3, metavar="N",
                        help="pages of the tail to read (default 3)")
     topic.add_argument("--posts", type=int, default=15, metavar="N",
                        help="posts per page (default 15)")
+    topic.add_argument("--links", action="store_true", help="print every link URL")
     add_session_flags(topic)
     topic.set_defaults(func=cmd_topic)
 
@@ -799,6 +863,7 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_cmd.add_argument("url")
     fetch_cmd.add_argument("--text", action="store_true", help="post text only")
     fetch_cmd.add_argument("--max-posts", type=int, default=None, metavar="N")
+    fetch_cmd.add_argument("--links", action="store_true", help="print every link URL")
     add_session_flags(fetch_cmd)
     fetch_cmd.set_defaults(func=cmd_fetch)
 
