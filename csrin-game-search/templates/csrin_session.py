@@ -427,15 +427,22 @@ def parse_search(html: str, limit: int | None = None) -> list[dict]:
 # one-shot lookups: one call, raw material, no decisions
 # --------------------------------------------------------------------------- #
 
-def search_url(query: str) -> str:
-    """Topic-title search, newest first — the cheapest useful first query."""
-    return BASE + "search.php?" + urllib.parse.urlencode({
+def search_url(query: str, sort: str | None = None) -> str:
+    """Topic-title search — the cheapest useful first query.
+
+    ``sort="time"`` asks for newest-started topics first, which is the only
+    ordering that separates a game from a dozen similarly named ones.
+    """
+    params = {
         "keywords": query,
         "terms": "all",
         "sf": "titleonly",
         "sr": "topics",
         "submit": "Search",
-    })
+    }
+    if sort == "time":
+        params.update({"sk": "t", "sd": "d"})
+    return BASE + "search.php?" + urllib.parse.urlencode(params)
 
 
 def fetch_last_page(topic_id: str, cookies: dict[str, str]) -> tuple[int, str]:
@@ -474,14 +481,14 @@ def format_post(post: dict) -> str:
 
 
 def find(query: str, cookies: dict[str, str], topics_n: int = 2,
-         posts_n: int = 15) -> int:
+         posts_n: int = 15, list_n: int = 0, sort: str | None = None) -> int:
     """Search by title, then print the newest page of the top topics.
 
     It gathers; it does not decide. No topic is called the best, nothing is
     filtered for "looks like a release", and a short page is reported as short —
     reading further back, or opening another topic, stays the agent's call.
     """
-    status, page = fetch(search_url(query), cookies, referer=BASE)
+    status, page = fetch(search_url(query, sort), cookies, referer=BASE)
     if status != 200:
         print(f"search failed: {status}", file=sys.stderr)
         return 2
@@ -490,17 +497,27 @@ def find(query: str, cookies: dict[str, str], topics_n: int = 2,
               "a known topic URL", file=sys.stderr)
         return 5
     total = search_total(page)
-    topics = parse_topics(page, 12)
-    print(f"search: {query!r} -> {total if total is not None else '?'} matches, "
-          f"{len(topics)} topic rows")
+    rows = parse_topics(page, None)
+    # Every row on the page is printed by default: a clean-files thread can sit
+    # below a dozen same-name games, and the forum column is how it is spotted.
+    topics = rows[:list_n] if list_n > 0 else rows
+    print(f"search: {query!r} -> {total if total is not None else '?'} matches; "
+          f"{len(rows)} rows on this page, showing {len(topics)}")
+    if total is not None and total > len(rows):
+        print(f"  note: {total - len(rows)} more matches are on later result pages; "
+              f"narrow it with the AppID or the exact English name")
+    if len(rows) > len(topics):
+        print(f"  note: {len(rows) - len(topics)} rows hidden by --list")
     if not topics:
         print("no topic rows: try the AppID, the untranslated English name, or "
               "the series name", file=sys.stderr)
         return 4
     for index, topic in enumerate(topics, 1):
         print(f"  {index}. t={topic['topic_id']}  [{topic['forum']}]  {topic['title']}")
-    chosen = topics[:topics_n]
-    with ThreadPoolExecutor(max_workers=len(chosen)) as pool:
+    # One request per opened topic, never a page walk: the cost of --find is
+    # 1 + topics_n requests no matter how many matches the query produced.
+    chosen = topics[:max(0, min(topics_n, 6))]
+    with ThreadPoolExecutor(max_workers=max(1, min(4, len(chosen)))) as pool:
         pages = list(pool.map(lambda t: fetch_last_page(t["topic_id"], cookies), chosen))
     for topic, (status, html) in zip(chosen, pages):
         print(f"\n--- t={topic['topic_id']} last page (status {status}): {topic['title']}")
@@ -533,7 +550,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("url", nargs="?", help="board path or absolute URL")
     parser.add_argument("--find", metavar="QUERY",
                         help="one shot: title search, then the newest page of the top topics")
-    parser.add_argument("--topics", type=int, default=2, help="topics to open in --find (default 2)")
+    parser.add_argument("--topics", type=int, default=2,
+                        help="topics to open in --find, capped at 6 (default 2)")
+    parser.add_argument("--list", type=int, default=0, metavar="N",
+                        help="result rows to print in --find; 0 means all (default 0)")
+    parser.add_argument("--sort", choices=("relevance", "time"),
+                        help="--find ordering; 'time' puts the newest topics first")
     parser.add_argument("--posts", type=int, default=15, help="posts per page digest (default 15)")
     parser.add_argument("--last", action="store_true",
                         help="digest the newest page of the given topic URL")
@@ -565,7 +587,8 @@ def main(argv: list[str] | None = None) -> int:
         login(cookies, user, password)
 
     if args.find:
-        return find(args.find, cookies, args.topics, args.posts)
+        return find(args.find, cookies, args.topics, args.posts,
+                    args.list, None if args.sort in (None, "relevance") else args.sort)
     if not args.url:
         parser.error("give a board URL, or --find QUERY")
     if args.last:

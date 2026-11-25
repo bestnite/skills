@@ -83,6 +83,8 @@ python csrin_session.py 'viewtopic.php?t=<id>' --last [--posts 15]
 
 `--find` runs the title search and then opens the newest page of the top topics, printing one two-line block per post: id, date, author with post count and join date, build stamp, hosts, unsafe count, masked flag, and the first 240 characters. `--last` does the same for one topic, in a single request, because phpBB clamps `start=999999` to the final page.
 
+Cost is `1 + topics` requests, whatever the query returns: a page of forty-one matching topics is still one request, and each opened topic is one more — never a page-by-page walk. `--topics N` (default 2, capped at 6) is the only lever, and the opened pages run in parallel. `--list N` trims the printed rows (0, the default, prints every row on the page, which is what keeps a `Steam Content Sharing` thread from hiding under a dozen same-name games). `--sort time` orders results by newest topic instead of relevance.
+
 They exist to save round trips, not to decide anything: the result is raw material for the judgement in `source-ranking.md`. A page that turns out to be chatter is a normal outcome, and the next step is one page further back or another topic.
 
 ## Result rows
